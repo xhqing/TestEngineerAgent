@@ -1,0 +1,33 @@
+
+# node_modules 全局兜底
+node_modules/
+
+# 系统杂物
+.DS_Store
+
+# Claude Code 个人本地配置（机器本地，不提交）
+.claude/settings.local.json
+
+# 本机私有指令（不进 git、不公开；Claude Code 每次会话自动加载）
+CLAUDE.local.md
+
+# 飞书云盘备份标签清单（本机私有，标记哪些文件要备份到飞书云盘）
+.backup-tags.json
+
+# 临时产物（见 tmp-dir-for-artifacts 规则）
+tmp/
+
+# 产物接力目录（勿公开）
+artifacts/
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 本机密钥通用兜底（保留 .env.example）
+.env
+.env.*
+!.env.example
+
+# 运行时数据目录（测试报告、本地日志等）
+docs/
