@@ -13,7 +13,7 @@
 
 # TestEngineerAgent
 
-> 🐞 **Hopper** — the software test engineer. Named after Grace Hopper, who found the first computer bug ever recorded (a moth in the Harvard Mark II, 1947) and popularized the word "debug". This agent hunts bugs for the whole team: it turns requirements into executable acceptance tests **before** development starts, and guards every project with a regression safety net.
+> 🐞 **Hopper** — the software test engineer. Named after Grace Hopper, who found the first computer bug ever recorded (a moth in the Harvard Mark II, 1947) and popularized the word "debug". This agent hunts bugs for the whole team: it writes tests from GitHub Issues **before** development starts (red first, then green), and guards every project with a regression safety net.
 
 [简体中文](README_cn.md)
 
@@ -21,15 +21,16 @@ TestEngineerAgent exists because of one recurring pain: agent-built projects kep
 
 ---
 
-## Separation of three powers (the core design)
+## Separation of powers (the core design)
 
-Testing only works if the tester is not the implementer. The design separates three powers that usually live together:
+Testing only works if the tester is not the implementer. The design separates powers that usually live together:
 
 | Power | Held by | Enforced by |
 |---|---|---|
-| **Definition** — writing test cases | Hopper | The developing agent is forbidden to touch test cases; if it thinks a case is wrong, it escalates for adjudication instead of editing it |
+| **Definition** — writing tests | Hopper | The developing agent gets read-and-run-only access to all test files (hook-enforced: no creating, editing, deleting, or moving); if it thinks a test is wrong, it escalates for adjudication instead of editing it |
 | **Implementation** — writing feature code | The developing agent | Hopper never edits feature code |
-| **Adjudication** — declaring pass / fail | CI (GitHub Actions) | A local green light is self-reported; only the remote CI verdict counts as third-party fact |
+| **Merge adjudication** — declaring pass / fail | Remote CI (GitHub Actions) | Full test suite + type check; CI green triggers auto-merge into main with no human wait — a local green light is only a pre-check |
+| **Release adjudication** — declaring ship / no-ship | The user | Real-world trial of prerelease builds (usage is acceptance); a formal release happens only once the user is satisfied |
 
 Why so strict? Because an LLM that "can't turn the light green" is strongly tempted to widen the assertion instead of fixing the code. If the implementer can edit the tests, the safety net is made of paper.
 
@@ -37,22 +38,24 @@ Why so strict? Because an LLM that "can't turn the light green" is strongly temp
 
 ## How a feature ships
 
-1. **Requirement → test cases (test-first).** Hopper interrogates the requirement until it is precise enough to assert (column order, date formats, empty-value behavior…), then writes acceptance cases covering happy paths, boundary values, and invalid inputs.
-2. **Cases land on a feature branch, CI wired to run them.**
-3. **The developing agent implements on the branch** — iterating against fast local test runs.
-4. **PR gate:** CI runs the full suite (all old cases + the new ones). Green → merge. Red → keep working or discard the branch; main is never polluted.
-5. **Every escape (a regression that slipped through) adds a case** — first prove the new case fails (red), then fix until green. The net only gets denser.
+1. **The requirement lands in an Issue.** The user opens a GitHub Issue whenever something breaks or is wanted, with reproduction steps / expected behavior — it doubles as the requirement doc, the acceptance criteria, and the seed of the tests.
+2. **Tests come first on the feature branch (red).** Hopper reads the Issue and writes tests (one focused assertion for a small bug, a case group for a big feature) in the project's canonical test location, runs them to confirm red — proving the assertions actually bite — and commits to the branch with explicit user authorization.
+3. **The developing agent implements on the same branch** — iterating against fast local test runs to green; test files are read-and-run-only for it (hook-enforced, even for adding tests).
+4. **PR + CI gate:** the PR description carries `fixes #N`; remote CI runs the full suite (all old tests + the new ones) plus a type check, and green triggers auto-merge into main with the Issue auto-closed; main is never polluted.
+5. **Prerelease trial (acceptance as a process):** the user installs an `rc.N` prerelease and uses it for real — checking each item against the Issue plus the feel, wording, and other dimensions that resist test cases; problems go through the fix loop (new Issue → Hopper writes a failing test first → fix merges → rc.N+1), and a formal release happens only once the user is satisfied.
+6. **Every escape (a regression that slipped through) adds a test** — first prove the new test fails (red), then fix until green. The net only gets denser.
 
-Main stays permanently green by design: a red main is always an incident, never "work in progress".
+Main stays permanently green by design: main only ever receives complete red-green loops (tests and implementation land in the same PR), so a red main is always an incident, never "work in progress".
 
 ---
 
 ## What Hopper owns
 
-- **New-feature acceptance cases** written before development starts;
-- **Regression net for existing projects** — built case by case from real incidents, prioritized by pain;
-- **Test directories and CI workflows** across the team's software repos;
-- **Verdict reports** for delivery acceptance: remote CI results + list of newly added cases.
+- **New-feature acceptance tests** written from the Issue before development starts (red first, then green);
+- **Regression net for existing projects** — built test by test from real incidents, prioritized by pain;
+- **Legacy `test-cases/` migration** — moving cases from the retired directory layout into each project's canonical test location, verified via PR + CI;
+- **Fix-loop test writing** — reproducing trial-found problems with failing tests before handing them to development;
+- **Test infrastructure config** — commands that decide "what gets run" are off-limits to developing agents; changes go through Hopper or the user.
 
 ---
 

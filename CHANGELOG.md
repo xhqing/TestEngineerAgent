@@ -4,6 +4,16 @@
 
 ## [Unreleased]
 
+### 变更（工作流对齐：Issue 需求端 + 测试 Agent 主通道出题，权威源镜像与归档验收取消）
+
+- **为什么改**：dev-workflow skill 2026-09-21 三次修订定稿——GitHub Issue 作需求端与状态机（`fixes #N` 合并自动关闭）、测试 Agent（Hopper）主通道出题、测试统一先行（分支内先红后绿）、开发对测试文件全量只读（hook 强制）、CI 绿即 auto-merge 合并（机器门禁独裁）、用户验收过程化（预发布试用、满意才发版）。角色文件每次会话必载，Hopper 若仍按旧文件（2026-09-07 本地裁决版：权威源 cases/ 单向分发、requirement.md 需求组、归档验收）行事会与现行流程直接冲突。
+- **改了什么**（2026-09-21）：`CLAUDE.md` 整篇更新——① 职责四条重写：Issue 出题（读 Issue 在项目正式测试位置先写测试、自跑见红，模糊点在 Issue 评论澄清，测试规模与体量匹配）、存量补网（事故开 Issue 承接、先写失败测试）、存量迁移（新增：取代原「用例库维护」——cases/ 权威源镜像机制与 pending/passed 状态机取消，项目仓库为唯一记录，存量 test-cases/ 由 Hopper 搬进正式测试位置、经 PR + CI 验证后删旧目录）、修复循环与需求变更响应（取代原「归档验收」——试用发现问题先写失败测试，需求变更更新 Issue 后重出测试）。② 工作流程六步重写为出题动线：接出题请求（worktree 路径 + Issue 链接）→ 带标记写入（hook 已扩展为测试文件全量保护，四端 `test-cases-guard.py` + pi 端 `test-cases-guard.ts`）→ 自跑确认红 → 经用户明确授权后带 `# AI_AUTHORIZED_COMMIT` 标记按路径 commit（不经暂存区）→ 开发期间对齐 → fixes #N 自动闭环（无归档动作）。③ 三权分立更新为四权：定义权（扩到全部测试文件与测试命令配置）、实现权、合并裁决权（远端 CI 绿即 auto-merge，2026-09-07「本地双重门禁 + 归档验收」废止）、发布裁决权（用户预发布试用满意才发版）；「main 必须始终绿」语义更新为「只见红绿闭环过的完整状态（测试与实现同 PR）」；补 hook 强度边界（防不住改实现 hack 骗测试，靠用户实物验收 + 可选 Hopper 复核兜底）。④ 工具段全量测试口径改为「项目正式测试位置全部测试」；约束段 git 纪律更新（commit 须用户明确授权 + 标记，push / PR / auto-merge 归开发 agent）。同步更新 `README.md` / `README_cn.md` 双语（引言、权力分立表四行、发布流程六步、Hopper 管什么）；`TODO.md` T2 归档（已被全局 dev-workflow + hook 取代）、T1 口径按新 CI 规范更新、新增 T3（cases/ 与各项目 test-cases/ 存量处置）。
+
+### 新增（恢复被并发覆盖丢失的 TODO 待办并按新流程重写：T4 pi fork Issue #4 出测试）
+
+- **为什么改**：21:01 写入 TODO.md 的 pi fork 待办（时为 T3）被另一会话 21:02 的 TODO 全文重写覆盖丢失（并发写冲突，归档无痕迹）——重写基于旧版本快照，未感知本会话的新增。用户要求按 dev-workflow 2026-09-21 三次修订审视该待办，审视发现旧内容按已废止体系（产出 requirement.md → cases/ 权威源 → 同步 test-cases/pending/ 镜像）写成，与现行 Issue 需求端 + 正式测试位置 + 先红流程冲突。
+- **改了什么**（2026-09-21）：TODO.md 🟢 绿色节新增 **T4**（为 pi fork 的 Issue #4 出测试（先红），写入 Worktree `~/Developer/pi-fork-update-check`），动线按新流程：读 Issue #4 澄清模糊点（Issue 评论内澄清，不另写 requirement.md）→ 用 pi 现有测试框架在项目正式测试位置带 `# TEST_CASES_WRITE_OK` 标记写入 → 自跑确认红 → 经用户明确授权后 commit 进功能分支；明确不写 cases/ 权威源、不建 test-cases/ 目录。编号顺延为 T4（T3 已被「处置 cases/ 存量」占用），条目内注记丢失-恢复史以留痕。
+
 ### 变更（CLAUDE.md 删去「由 Claude Code 自动加载」说明句）
 
 - **为什么改**：用户 2026-09-12 要求 CLAUDE.md 不再强调本文由 Claude Code 加载，团队全部项目的 CLAUDE.md 统一清理此类语句。
