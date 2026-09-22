@@ -4,6 +4,25 @@
 
 ## [Unreleased]
 
+### 变更（T5 续：处置 PR #5 CI 二次红——内置模型目录数据漂移致测试断言过期，非本 PR 回归）
+
+- **为什么改**：T5 ⑤ 用户 commit（f771fcac9）已 push，但 CI（run 35685064701）Check 过、Test 红在 `model-registry.test.ts` 3 条用例；排查（分支 diff 未碰该文件 → main 基线 CI 绿但重跑必红 → 本地全新 `npm ci` + `npm run build` 完整复现 CI 环境后稳定复现）定位根因：pi 的 `npm run build` 会由 `generate-models` 联网刷新内置模型目录，上游目录已淘汰裸 `anthropic/claude-opus-4`（只剩 4.1+），测试断言引用的内置模型 ID 过期——属基线漂移非本 PR 改动引入，upstream 亦以 eaf72ed4d（"update stale test expectations"）修同一批过期断言。
+- **改了什么**（2026-09-22）：① pi worktree `packages/coding-agent/test/model-registry.test.ts`：6 处 `"anthropic/claude-opus-4"` → `"anthropic/claude-opus-4.1"`（含 `modelOverrides` key；带 `# TEST_CASES_WRITE_OK` 标记写入，改前 6 处枚举、改后零残留复验；行为断言不变，只换目录内存在的模型 ID，与 upstream eaf72ed4d 修法对齐——其 7 处中 6 处在 fork 旧版文件存在，promptCache 一处 fork 无该用例）；验证：复现环境下单文件 85/85 绿、`npm run check` 全过、连同 issue #4 三文件共 124/124 绿。② pi 根 `CHANGELOG.md` 补 follow-up 条目（根因 + 修复 + 佐证链）。③ 本项目 `TODO.md` T5 补进展（12:26），剩余动作：用户再次 `git add` 两路径 + `/commit`。
+### 变更（commit 动线修订：commit 一律由用户亲自执行，AI 不申请授权、不代行）
+
+- **为什么改**：2026-09-22 用户裁定——AI 交付后不再向用户申请 commit 授权，commit 动作由用户亲自完成（用户自行 `git add` 后触发 `/commit` skill，commit + push + PR auto-merge 一条龙）；AI 职责收敛为「交付报告列明应 `git add` 的路径与改动摘要 + 确保 `/commit` skill 覆盖所需功能」。原动线（授权请求 → 用户点头 → AI 带 `# AI_AUTHORIZED_COMMIT` 标记按路径直接 commit）废止。
+- **改了什么**（2026-09-22）：① 本项目 `CLAUDE.md` 两处——工作流程第 4 步改为「commit 由用户亲自执行」，约束段同步；② `TODO.md` T5 第⑤步与进展行同步改为用户自行 commit 动线；③ 全局 dev-workflow skill 同步修订（详见 CapabilityManagerAgent CHANGELOG 同日条目）；④ `/commit` skill 核对无需改：功能已覆盖功能分支场景（提交暂存区 → push 分支 → 识别已有 PR → enable auto-merge → CI 绿合并），前提是用户先自行 `git add`。
+
+### 变更（T5 执行：修复 pi PR #5 测试提交四处遗留缺陷，解锁 Issue #4 合并）
+
+- **为什么改**：T5 所列四处执行遗漏（commit 698323171）使 PR #5 CI 在 Check 步骤红、开发侧实现已停等测试修复，Issue #4 修复合并被整体卡住；且三处记录声称「删两用例」实删一条，声称与实际不符误导下游判断。
+- **改了什么**（2026-09-22）：pi worktree（`~/Developer/pi-fork-update-check`）两个测试文件六处修复（均走 `# TEST_CASES_WRITE_OK` 标记通道，枚举复验零残留）：① `test/package-command-paths.test.ts` 删残留用例 `fails self-update when renamed npm package installation fails`；② 同用例文件 inherited-env 用例 mock 改 `tag_name: v${VERSION}`、断言改 `getForkReleaseTarballUrl(VERSION)`（import 实现入口，切断官方包覆盖路径）；③ 两处零参 fetch mock 补签名（`_input: string | URL | Request`，version-check 处另带 `_init?: RequestInit` 支撑双元素解构）修 3 个 TS2493。验证：`npm run check` 全过，两文件 38/38 全绿（8/8 + 30/30）。pi 根 CHANGELOG 补 follow-up 条目对齐声称与实际；本项目 TODO.md T5 补进展（①～④完成，⑤ commit 待用户授权）。
+
+### 变更（pi Issue #4 出题事故复盘：出题动线加四道加固纪律，缺陷修复立 T5）
+
+- **为什么改**：2026-09-21 为 pi fork Issue #4 出的测试提交（xhqing/pi 分支 `fix/fork-update-check`，commit 698323171，PR #5）复盘发现四处执行遗漏——测试注释 / pi CHANGELOG / 本项目 T4 进展三处声称「删 renamed-package 两用例」实删一条、同文件一处 mock 没扫成 `tag_name`、3 个 TS2493 类型错误（fetch mock 零参签名）。后果：PR #5 CI 在 Check 步骤红（Test 未跑），开发侧实现已停在等测试侧修复；且「声称与实际不符的记录」误导下游判断。属于出题动线的流程缺口（改写存量大文件的机械扫改遗漏 + 提交前没跑标准检查），需固化成纪律防同类复发。
+- **改了什么**（2026-09-22）：① `CLAUDE.md` 出题动线四处加固——第 2 步（出题写入）新增「改写存量测试文件必须逐条对照 + 枚举验证（改前 rg 枚举、改后 rg 复验零残留、声称删除的用例名 rg 确认不在）」与 mock 签名按真实调用形态声明参数的要求；第 3 步（自跑确认红）新增「红灯盲区」——自跑见红证明不了没有漏改漏删（该删未删的旧用例在旧实现下照常绿，pi #4 实证 13 红 27 绿中藏着 2 条残留）——以及「交付自检门禁」：自跑见红后、向用户报告完成并请求 commit 授权之前，必跑项目标准检查命令（类型检查所在）+ 目标范围全量测试，非预期红修完再交付；门禁设在交付前而非 commit 时刻（commit 由用户发起、时机不可预期，还可能由用户或其它会话直接执行——检查必须在 Hopper 仍掌控交付物的最后一站完成，让授权请求自带「检查已全过」的证据）；第 4 步相应注明「授权请求只在交付自检全过之后发出」；工作原则新增「声称与实际一致」条（记录里的删改声称交付前逐条核对实际文件）。② `TODO.md` 新增 **T5**（🟠，修复 PR #5 测试提交四处遗留缺陷：删残留的 renamed 用例、inherited-env 用例 mock 改 tag_name + 断言改 fork tarball 安装源、修 3 个 TS2493，自跑全绿后授权 commit，解锁 Issue #4 修复合并）；T4 进展补记（④ commit 已完成 22:06 / PR #5 建立，但提交有四处遗漏转 T5 跟踪，两待办 PR 合并全绿后一并归档）。
+
 ### 变更（工作流对齐：Issue 需求端 + 测试 Agent 主通道出题，权威源镜像与归档验收取消）
 
 - **为什么改**：dev-workflow skill 2026-09-21 三次修订定稿——GitHub Issue 作需求端与状态机（`fixes #N` 合并自动关闭）、测试 Agent（Hopper）主通道出题、测试统一先行（分支内先红后绿）、开发对测试文件全量只读（hook 强制）、CI 绿即 auto-merge 合并（机器门禁独裁）、用户验收过程化（预发布试用、满意才发版）。角色文件每次会话必载，Hopper 若仍按旧文件（2026-09-07 本地裁决版：权威源 cases/ 单向分发、requirement.md 需求组、归档验收）行事会与现行流程直接冲突。
