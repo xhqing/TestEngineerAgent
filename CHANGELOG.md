@@ -4,6 +4,21 @@
 
 ## [Unreleased]
 
+### 变更（T6 执行完成：ghostty-launcher Issue #1 测试先行交付——测试框架 / 测试命令 / CI 建立）
+
+- **为什么改**：承接 T6 出题任务（见下一节），在 worktree 内完成测试先行交付：Issue #1 的修复触及核心运行行为，按 dev-workflow 需先出测试（自跑见红）再交开发实现；该仓库此前无测试体系（无框架、无 test 命令、无 CI），随本次一并建立。
+- **改了什么**（2026-09-29）：worktree `~/Developer/ghostty-launcher-new-window-reliability`（分支 `fix/new-window-reliability`）：
+  - 新增 `test/ghostty.test.js`（18 用例）与 `test/panel.test.js`（7 用例）：零依赖 Node 内置 `node:test`；覆盖 Issue #1 期望行为的可测部分——New Window 决策（运行中失败重试一次、两次失败返回错误且绝不回退 `open -na`、未运行 open 冷启动）、激活决策（成功 / 窗口已不存在 / 调用失败）、JXA 脚本生成（列表 / 激活 / 新窗口）、`shellQuote`、轮询间隔 3000ms、可观测 log（失败不静默）、面板列表稳定签名 `signatureOf` 与提示文案 `hintFor`。测试文件走 `# TEST_CASES_WRITE_OK` 标记通道写入（先落项目 tmp/、再带标记 cp 进 test/）。
+  - `package.json` 新增 `scripts.test`（`node --test test/*.test.js`）与 `scripts.check`（全量 JS `node --check`）；新增 `.github/workflows/ci.yml`（`pull_request`(main) + `push`(main) 触发，跑语法检查 + 全量测试；首次启用顺序：先 CI 经 PR 进 main、合并后再开 main 分支保护设 required）；`.vscodeignore` 排除 `test/**` 与 `.github/**`。
+  - 自跑验证：`npm run check` 全过；`npm test` 全红（实现未落地、先红有效）；额外做加强自检——tmp/ 内最小 stub 全绿 25/25（排除测试自身恒红）+ 三类变异（不重试 / 回退 open / 签名忽略 running）红 3 / 2 / 1 条（排除永真断言），自检临时物已清理。
+  - `TODO.md` T6 移入 `TODO-archive.md`（✅ 已完成）；ghostty-launcher `CHANGELOG.md` 增加「未发布」节记录本次交付。
+- **待用户执行**：worktree 内 `git add test/ .github/ package.json .vscodeignore CHANGELOG.md` + `/commit`（commit 由用户亲自执行；该分支为功能分支，skill 会 push 分支并建 PR + enable auto-merge，CI 绿即合并）。
+
+### 变更（承接 T6：ghostty-launcher Issue #1 出测试任务——跨 agent 下发新约定首个用例）
+
+- **为什么改**：ghostty-launcher（Atlas 负责的 VSCode 扩展）面板「New Window」按钮偶发无反应（2026-09-29 一次），排查结论指向「点击未变成扩展调用」+ 扩展零日志（所有失败路径静默吞掉），无法直接定位根因；修复触及 `extension.js` 运行行为、属核心开发，按 dev-workflow 需测试先行。该仓库为团队首个走 dev-workflow 的项目——尚无测试框架、测试命令、CI 与 main 分支保护，测试框架与测试命令需随本次任务一并建立。另按用户 2026-09-29 新定约定，测试任务的跨 agent 下发改由开发 Agent 直接写入本 TODO 并报编号（不再让用户人工转达），本条为首个按此约定写下的任务；全局 dev-workflow skill 第 3 步与 `references/test-cases.md` 已同步修订（详见 CapabilityManagerAgent CHANGELOG 同日条目）。
+- **改了什么**（2026-09-29 19:33）：`TODO.md` 🟠 橙色节新增 **T6**（为 ghostty-launcher Issue #1 出测试（先红），写入 worktree `~/Developer/ghostty-launcher-new-window-reliability` / 分支 `fix/new-window-reliability`；动线：读 Issue #1 正文与评论（含 dev 侧接口提示 `lib/ghostty.js` + `media/panel.js`）→ 选测试框架（零依赖可用 `node:test`）在 `test/` 写测试（带 `# TEST_CASES_WRITE_OK`）→ 自跑见红 → 定测试命令（`package.json` test script）→ 按 CI 集成规范拟 `ci.yml`（先 ci.yml 进 main 再开分支保护）→ 交付自检全过后报告应 `git add` 路径）。
+
 ### 变更（T5 续：处置 PR #5 CI 二次红——内置模型目录数据漂移致测试断言过期，非本 PR 回归）
 
 - **为什么改**：T5 ⑤ 用户 commit（f771fcac9）已 push，但 CI（run 35685064701）Check 过、Test 红在 `model-registry.test.ts` 3 条用例；排查（分支 diff 未碰该文件 → main 基线 CI 绿但重跑必红 → 本地全新 `npm ci` + `npm run build` 完整复现 CI 环境后稳定复现）定位根因：pi 的 `npm run build` 会由 `generate-models` 联网刷新内置模型目录，上游目录已淘汰裸 `anthropic/claude-opus-4`（只剩 4.1+），测试断言引用的内置模型 ID 过期——属基线漂移非本 PR 改动引入，upstream 亦以 eaf72ed4d（"update stale test expectations"）修同一批过期断言。
