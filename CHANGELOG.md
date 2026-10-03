@@ -4,6 +4,25 @@
 
 ## [Unreleased]
 
+### 新增（T7 交付：ghostty-launcher Issue #5 先行用例落地 + 沙箱自检）
+
+- **为什么改**：承接同日 19:58 的 T7 立项（见下一节）——把「新窗口未置前」缺陷的先行用例交到开发 agent 手里，作为 Atlas 开工实现的条件；测试产物按 2026-09-30 用户定的新动线留在工作区、不提交（与实现同一次提交、同一个 PR）。本项目文件侧（`TODO.md` 进展 + 本记录）按「文件增删改必记」纪律记录。
+- **改了什么**（2026-09-30 20:08）：
+  - ghostty-launcher worktree `~/Developer/ghostty-launcher-new-window-focus`：`test/ghostty.test.js` 新增 6 条 Issue #5 用例（文件 24 条）——（a）脚本在 `newWindow` 之后对刚创建的窗口对象调用 `activateWindow`（保留既有 JSON 转义契约）；（b）Node 沙箱真实执行脚本断言控制流（激活抛错返回可区分状态 `"activate-failed"`；创建抛错不得伪装成成功）；（c）`runNewWindow` 对「已创建但激活失败」判 `ok:true`、不重试、不回退 `open -na`、写警告日志；（d）非约定状态仍按创建失败重试报错。测试文件走 `# TEST_CASES_WRITE_OK` 标记通道写入（`tmp/` 预置内容 → 带标记 Python 插桩，diff 确认 133 行纯新增）。
+  - ghostty-launcher `CHANGELOG.md` 加「未发布」节测试条目。
+  - `TODO.md` T7 补记进展（剩余步骤交回开发侧）。
+- **验证**（2026-09-30）：交付自检——`npm run check` 全过；`npm test` 4 红 27 绿（红全为新增 Issue #5 行为用例、实现尚不存在；2 条新守卫用例 + 既有 18 条保持绿）；`tmp/` 沙箱用「按 Issue 修复方向改的 lib 副本」对跑 24/24 全绿（排除永真断言），四类变异（脚本不激活 / 创建失败吞成激活失败 / 不识别 `activate-failed` / 放宽成功判定）分别红 3 / 1 / 1 / 1 条、均被对应用例抓住。
+
+### 新增（T7：为 ghostty-launcher 的「新窗口未置前」缺陷出测试）
+
+- **为什么改**：用户 2026-09-30 在 ghostty-launcher **v0.2.1 正式版**实测报缺陷——面板 **New Window** 建出窗口但不置前（Ghostty 在后台时新窗口停在原前台应用后面）。开发侧 Atlas 源码级定位根因（Ghostty AppleScript `new window` handler 全程无 `NSApp.activate`，只有 `showWindow`；`activate window` 才有 `makeKeyAndOrderFront` + `NSApp.activate(ignoringOtherApps: true)`），已立 Issue #5 并建 worktree / 分支 `fix/new-window-focus`。按 dev-workflow 测试先行，出题任务写入本项目 `TODO.md`。
+- **改了什么**（2026-09-30 19:58）：`TODO.md` 🟠 橙色节新增 **T7**——worktree `~/Developer/ghostty-launcher-new-window-focus` / 分支 `fix/new-window-focus`（从最新 main `eb22957` 开出）。出题范围：`buildNewWindowScript` 须在 `newWindow(...)` 之后调用 `activateWindow`；`runNewWindow` 对「已创建但激活失败」仍判成功（防重试建出第二个窗口）并写入日志；创建失败路径的「重试一次 + 绝不回退 `open -na`」断言不变。交付后**测试产物留在工作区不提交**（2026-09-30 用户定：测试与实现同一次提交、同一个 PR）。
+
+### 变更（测试交付动线修订：测试产物不提交、留在工作区等实现——2026-09-30 用户定）
+
+- **为什么改**：用户 2026-09-30 裁定测试先行的流程缺陷——**测试不能先提交、更不能先开 PR**。原动线（交付自检后「报告应 `git add` 的路径」、由用户立即 `/commit`）在功能分支上必然 push 分支 + 建 PR + enable auto-merge，实际等于测试单独开一个 PR；PR 描述又按惯例带 `fixes #N`，合并即把 Issue 提前关成 completed。2026-09-29 实测事故：T6 的出题产物（ghostty-launcher 测试）PR #2 合并 1 秒后，Issue #1 被自动关成 completed，实现还没写；main 因此出现「测试已进、实现未进」的半程状态、CI 全量必红。正确动线：测试写在功能分支工作区放着不提交，开发完成、本地全量测试转绿后由用户一次性 `git add`（测试 + 实现 + CHANGELOG）+ `/commit`——测试与实现在同一次提交、同一个 PR 里进 main。
+- **改了什么**（2026-09-30）：① `CLAUDE.md` 出题动线第 4 步由「commit 由用户亲自执行（报告应 `git add` 的路径）」改写为「**测试产物不提交，留在工作区等实现**」：交付报告列测试文件清单 / 测试命令 / 自跑见红证据即交还开发，不催用户提交；补事故原因与唯一例外（合并 `origin/main` 撞路径时可先本地提交、不 push 不开 PR）。② 第 3 步「交付自检门禁」删去已废止的「请求 commit 授权」表述，改为「报告交付完成之前」。③ 工作原则「main 必须始终绿」补「测试先行也不是『先提交、先开 PR』的先行——测试单独成 PR 会让 `fixes #N` 把 Issue 提前关掉、main 留下半程状态」。④ 约束段 git 纪律补「交付时不要提请用户提交测试产物」。⑤ 双语 README 第 2 步同步（去掉「经用户授权 commit 进分支」，改为测试产物留在工作区、与实现一次性提交同一 PR）。⑥ 全局 dev-workflow skill（SKILL.md + references/test-cases.md）与 commit skill（新增「测试文件独占暂存区的暂停询问」）同步修订（详见 CapabilityManagerAgent CHANGELOG 同日条目）。
+
 ### 变更（T6 执行完成：ghostty-launcher Issue #1 测试先行交付——测试框架 / 测试命令 / CI 建立）
 
 - **为什么改**：承接 T6 出题任务（见下一节），在 worktree 内完成测试先行交付：Issue #1 的修复触及核心运行行为，按 dev-workflow 需先出测试（自跑见红）再交开发实现；该仓库此前无测试体系（无框架、无 test 命令、无 CI），随本次一并建立。
