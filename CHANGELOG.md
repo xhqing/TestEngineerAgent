@@ -2,6 +2,13 @@
 
 本文件记录本项目（TestEngineerAgent / Hopper）每次文件增删改查的变更，写清「为什么改」和「改了什么」。版本号以项目根 `VERSION` 文件为唯一权威（当前 0.1.0）。
 
+## [未发布]
+
+### 新增（T9 立项：pi Issue #22 先行用例出题任务）
+
+- **为什么改**：Atlas 按 dev-workflow 下发 pi 的运行时行为变更需求——启动画面 `[Skills]` 默认就按来源分组展示（project / user / path 各一行，Issue #22）；按测试先行流程，先由 Hopper 在功能分支出用例（先红），开发才开工实现。
+- **改了什么**（2026-10-09 21:22）：`TODO.md` 新增 T9（背景、要做什么、worktree `~/Developer/pi-skills-grouped`、分支 `feat/skills-default-grouped`）；测试产物按 2026-09-30 口径只留工作区、不提交。
+
 ## [0.1.1] - 2026-10-09
 
 ### 新增（T8 交付：ghostty-launcher Issue #8 先行用例落地 + 沙箱自检）
