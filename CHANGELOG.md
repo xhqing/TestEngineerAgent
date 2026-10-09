@@ -2,7 +2,7 @@
 
 本文件记录本项目（TestEngineerAgent / Hopper）每次文件增删改查的变更，写清「为什么改」和「改了什么」。版本号以项目根 `VERSION` 文件为唯一权威（当前 0.1.0）。
 
-## [Unreleased]
+## [0.1.1] - 2026-10-09
 
 ### 新增（T8 交付：ghostty-launcher Issue #8 先行用例落地 + 沙箱自检）
 
