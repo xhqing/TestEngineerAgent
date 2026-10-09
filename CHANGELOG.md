@@ -4,6 +4,20 @@
 
 ## [Unreleased]
 
+### 新增（T8 交付：ghostty-launcher Issue #8 先行用例落地 + 沙箱自检）
+
+- **为什么改**：承接 14:37 的 T8 立项（见下一节）——把「置前被 macOS 静默否决」缺陷的先行用例交到开发 agent 手里，作为 Atlas 开工实现的条件；测试产物按 2026-09-30 用户定的动线留在工作区、不提交（与实现同一次提交、同一个 PR）。本项目文件侧（`TODO.md` 进展 + 本记录）按「文件增删改必记」纪律记录。
+- **改了什么**（2026-10-09 14:47）：
+  - ghostty-launcher worktree `~/Developer/ghostty-launcher-front`：`test/ghostty.test.js` 新增 10 条 Issue #8 用例（文件 34 条）——（a）`ensureForeground`：已在前台 → `method:'none'` 且不调 `activateApp`；不在前台 → 兜底恰一次、复查在前台 → `method:'launchservices'`；兜底后仍不在前台 → `ok:false` + 中文原因；置前查询抛错 / 复查抛错 / 兜底动作抛错均不 reject；`wait` 每次查询前调用；成功 / 兜底 / 失败日志可辨识。（b）`foregroundNoticeText`：`created:true` 含「新窗口已创建」，两分支均含「未能切到前台」「⌘-Tab」与传入原因；`created:false` 不得声称已创建；error 缺省不抛错。测试文件走 `# TEST_CASES_WRITE_OK` 标记通道写入（`tmp/` 预置内容 → 拼接 → 带标记 cp；diff 确认既有 401 行逐字节未变、208 行纯新增）。
+  - ghostty-launcher `CHANGELOG.md` 加「未发布」节测试条目。
+  - `TODO.md` T8 补记进展（剩余步骤交回开发侧）。
+- **验证**（2026-10-09）：交付自检——`npm run check` 全过；`npm test` 10 红 31 绿（红全为新增 Issue #8 用例、实现尚不存在；既有 31 条保持绿）；`tmp/` 沙箱用「按接口契约写的参考实现」拼接 lib 副本对跑 34/34 全绿（排除永真断言），四类变异（已在前台也调兜底 / 兜底失败谎报成功 / 查询异常向上抛 / 文案误称窗口已创建）各自红 1 条、均被对应用例抓住。
+
+### 新增（T8：为 ghostty-launcher 的「置前被系统静默否决」缺陷出测试）
+
+- **为什么改**：用户 2026-10-09 在 ghostty-launcher 实测报缺陷——VSCode 里点面板 **New Window** 什么都没有发生（没弹窗、也没切前台），但扩展日志写着 `✓ 新窗口创建成功`、窗口列表计数 +1。开发侧 Atlas 排查锁定根因：置前请求在 AppKit 之下被 macOS 否决（系统日志 `CPS: Rejecting expired request`，15 条逐条对应 12 次点击；判据是「请求来源时间早于该应用最近一次被激活时间」），而 `NSApp.activate(ignoringOtherApps:)` 异步无返回值——**扩展拿不到拒收结果**，所以日志全绿而实际没置前；同日再试（人刚操作过 Ghostty）同一路径被放行，属条件性否决、表现为偶发。这不是 Issue #5 修复的回归，而是它的覆盖缺口。已立 Issue #8，按 dev-workflow 测试先行，出题任务写入本项目 `TODO.md`。
+- **改了什么**（2026-10-09 14:37）：`TODO.md` 🟠 橙色节新增 **T8**——worktree `~/Developer/ghostty-launcher-front` / 分支 `fix/bring-to-front`（从最新 main `5304e22` 开出）。出题范围：新增纯逻辑 `ensureForeground`（已在前台不多调用 / 不在前台走 LaunchServices 兜底一次 / 兜底后仍不在前台则返回可展示的中文原因 / 查询或兜底抛错不得向上抛 / 每次查询前调用注入的 `wait` / 成功·兜底·失败均有可辨识日志）与 `foregroundNoticeText`（面板与状态栏复用的提示文案，含「新窗口已创建」「未能切到前台」「⌘-Tab」指引与传入的错误原因）；并明确「不改 Issue #5 锁定的既有契约」（创建成功 `ok:true`、失败只重试一次、绝不回退 `open -na`）——既有 31 条用例必须保持绿。交付后**测试产物留在工作区不提交**（与实现同一次提交、同一个 PR）。
+
 ### 新增（T7 交付：ghostty-launcher Issue #5 先行用例落地 + 沙箱自检）
 
 - **为什么改**：承接同日 19:58 的 T7 立项（见下一节）——把「新窗口未置前」缺陷的先行用例交到开发 agent 手里，作为 Atlas 开工实现的条件；测试产物按 2026-09-30 用户定的新动线留在工作区、不提交（与实现同一次提交、同一个 PR）。本项目文件侧（`TODO.md` 进展 + 本记录）按「文件增删改必记」纪律记录。
