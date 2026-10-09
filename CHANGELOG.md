@@ -2,6 +2,17 @@
 
 本文件记录本项目（TestEngineerAgent / Hopper）每次文件增删改查的变更，写清「为什么改」和「改了什么」。版本号以项目根 `VERSION` 文件为唯一权威。
 
+## [未发布]
+
+### 新增（T9 交付：pi Issue #22 先行用例落地 + 沙箱自检）
+
+- **为什么改**：承接 21:22 的 T9 立项——把 Issue #22（启动画面 `[Skills]` 默认按来源分组）的先行用例交到开发侧（Atlas）手里，作为实现开工的条件；本项目文件侧（`TODO.md` 进展 + 本记录）按「文件增删改必记」纪律记录。
+- **改了什么**（2026-10-09 21:36）：
+  - pi worktree `~/Developer/pi-skills-grouped`：`packages/coding-agent/test/interactive-mode-status.test.ts` 新增 5 条 Issue #22 用例——默认 compact 按来源分组（project/user/path 各一行 + 组内名字字母序，fixture 让名字序 ≠ 路径序）、空组不显示 + 单 skill 组仍带标签、npm:/git:/cli 包来源归位（用 skill 名）、展开态保持 per-path 明细、其余区块保持扁平；harness 加固（`Object.setPrototypeOf` 接原型链 + `skills` 选项类型补 `sourceInfo`），既有「compact 默认」用例切到真实 scope 分组路径。
+  - pi `packages/coding-agent/CHANGELOG.md` 加「Unreleased」节测试条目。
+  - `TODO.md` T9 补记进展（剩余步骤交回开发侧）。
+- **验证**（2026-10-09）：`npx vitest run test/interactive-mode-status.test.ts` 4 红 34 绿（红全为新增 Issue #22 验收点、实现尚不存在；既有 33 条 + 展开态守卫保持绿）；`tmp/` 沙箱参考实现 38/38 全绿，5 类变异（不分组 / 组内不排序 / 丢组标签 / 丢包来源技能 / 空组照显）各被对应用例抓住；`npx biome check` 与 `npx tsgo --noEmit` 全过。
+
 ## [0.1.2] - 2026-10-09
 
 ### 新增（T9 立项：pi Issue #22 先行用例出题任务）
