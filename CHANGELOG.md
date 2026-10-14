@@ -2,6 +2,21 @@
 
 本文件记录本项目（TestEngineerAgent / Hopper）每次文件增删改查的变更，写清「为什么改」和「改了什么」。版本号以项目根 `VERSION` 文件为唯一权威。
 
+## [未发布]
+
+### 新增（T10 立项：codef Issue #25 先行用例出题）
+
+- **为什么改**：Atlas 按 dev-workflow 下发 codef（Atlas 项目）Issue #25 的运行行为变更需求——`codef left` 先判断承载命令的终端窗口是否处于 macOS 原生全屏、是则先退出其全屏再走原有「VSCode 左半屏全屏」流程（详见 Issue #25）；按测试先行流程，先由 Hopper 在功能分支出用例（先红），开发才开工实现。
+- **改了什么**（2026-10-15 00:05）：`TODO.md` 新增 T10（背景、要做什么、约定 stub 接口、worktree `~/Developer/codef-left-exit-terminal-fullscreen` / 分支 `feat/left-exit-terminal-fullscreen`）；测试产物按 2026-09-30 口径只留工作区、不提交。
+
+### 新增（T10 交付：codef Issue #25 先行用例落地 + 沙箱自检）
+
+- **为什么改**：承接 00:05 的 T10 立项——把 Issue #25（`codef left` 先退终端全屏再走原流程）的先行用例交到开发侧（Atlas）手里，作为实现开工的条件；本项目文件侧（`TODO.md` 进展 + 本记录）按「文件增删改必记」纪律记录。
+- **改了什么**（2026-10-15 01:04）：
+  - codef worktree `~/Developer/codef-left-exit-terminal-fullscreen`：新增 `test/left-terminal-fullscreen.test.sh`（PATH 前置桩驱动 `code` / `osascript`，覆盖预处理调用形态与位置（第一个 osascript 调用、在 `code` 前、argv 含 bundle id、stdin 含退出逻辑）、TERM_PROGRAM 映射表十项、未设置 / 未映射 / 默认模式跳过、五种状态 best-effort）；`.github/workflows/ci.yml` 增加运行步骤；codef `CHANGELOG.md` 补「未发布」测试条目。
+  - `TODO.md` T10 补记进展（剩余步骤交回开发侧）。
+- **验证**（2026-10-15）：自跑红 41 通过 / 29 失败（红全为新增 Issue #25 验收点、负向对照全绿）；沙箱参考实现 82/82 全绿（排除永真断言）；四类变异（预处理挪后 / 缺退出尝试 / 默认模式误调 / 错误映射）各被对应用例抓住（红 1 / 1 / 1 / 11 条）；CI 等价检查全过（bash -n、shellcheck、3 段 heredoc 编译、回归断言、13 条 fixtures、版本一致、错误路径、--version）。
+
 ## [0.1.4] - 2026-10-09
 
 ### 变更（T9 归档：pi Issue #22 全链完成）
