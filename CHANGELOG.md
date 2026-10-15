@@ -23,6 +23,17 @@
 - **改了什么**（2026-10-15 01:37）：`TODO.md` 删除 T10 条目；`TODO-archive.md` 归档 T10（保留原正文，标 ✅**已完成**，附完成说明：交付时 41 通过 / 29 失败 → 实现后 82/82 全绿）。
 - **外部事实实测**（2026-10-15）：`xhqing/codef` Issue #25 已 CLOSED（COMPLETED，2026-10-14T17:20:34Z）；PR #26 已 MERGED（2026-10-14T17:20:32Z）；Release v0.5.0 已发布（2026-10-14T17:34:27Z，非 draft / 非 prerelease）；`origin/main` 上测试文件与交付快照逐字节一致、CI 步骤在位。
 
+### 新增（T11 立项：pi Issue #28 断言更新）
+
+- **为什么改**：pi 仓库「[Extensions] 默认按来源分组」实现已就绪（上一会话遗留、会话中断），2 处硬编码断言未随分组语义更新（测试红 2 / 38）；按 dev-workflow 测试文件归测试侧，Atlas 立项 T11 后由 Hopper 更新。
+- **改了什么**（2026-10-15 17:23）：`TODO.md` 新增 T11（背景、要做什么、worktree `~/Developer/pi-extensions-grouped` / 分支 `feat/extensions-default-grouped`）；测试产物留工作区、不提交。
+
+### 新增（T11 交付：pi Issue #28 断言更新落地）
+
+- **为什么改**：承接 17:23 的 T11 立项——上一会话的实现已就绪，2 处硬编码断言未随「[Extensions] 默认按来源分组」新语义更新（测试红 2/38）；按 dev-workflow 测试文件归测试侧，由本项目更新后交回 Atlas 提交。
+- **改了什么**（2026-10-15 17:38）：pi worktree `~/Developer/pi-extensions-grouped` 的 `packages/coding-agent/test/interactive-mode-status.test.ts` 四处更新（fixture 启用真实分组、两处断言改分组格式、一处用例名对齐新语义）；`TODO.md` T11 补记进展。
+- **验证**（2026-10-15）：基线红 2 failed / 36 passed (38)；更新后 38/38 全绿；`biome check`（该文件）与 `tsgo --noEmit`（整仓）均通过。
+
 ## [0.1.4] - 2026-10-09
 
 ### 变更（T9 归档：pi Issue #22 全链完成）
