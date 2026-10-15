@@ -45,6 +45,12 @@
 - **改了什么**（2026-10-15 19:16）：pi worktree `~/Developer/pi-extensions-grouped`（分支 `fix/ai-catalog-drift`）三个测试文件——`openai-completions-tool-choice.test.ts`（6 处 ID + 2 处标题）、`supports-xhigh.test.ts`（删除 1 条已下架模型的过期用例）、`stream.test.ts`（标题 + ID）；`TODO.md` T12 补记进展。
 - **验证**（2026-10-15）：openai + supports-xhigh 两文件 78/78 全绿；stream 剥离本机 key（CI 对等）无失败；整仓 `tsgo --noEmit` 零错误。
 
+### 变更（T11 & T12 归档：pi Issue #28 / #30 全链完成）
+
+- **为什么改**：pi 侧两条链同日完成——PR #29（Extensions 分组，Issue #28）与 PR #31（模型目录漂移，Issue #30）先后合并、v0.0.6 发布；按 TODO 纪律把 T11、T12 从 `TODO.md` 移入 `TODO-archive.md` 闭环。
+- **改了什么**（2026-10-15 22:53）：`TODO.md` 删除 T11、T12 条目；`TODO-archive.md` 归档两条（保留原正文，标 ✅**已完成**，附完成说明）。
+- **外部事实实测**（2026-10-15）：Issue #28 CLOSED（14:24:08Z）/ PR #29 MERGED（14:24:06Z）；Issue #30 CLOSED（14:14:14Z）/ PR #31 MERGED（14:14:13Z）；Release v0.0.6 已发布（14:44:36Z，8 产物，非 draft / 非 prerelease）。
+
 ## [0.1.4] - 2026-10-09
 
 ### 变更（T9 归档：pi Issue #22 全链完成）
