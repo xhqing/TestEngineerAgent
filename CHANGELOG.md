@@ -34,6 +34,17 @@
 - **改了什么**（2026-10-15 17:38）：pi worktree `~/Developer/pi-extensions-grouped` 的 `packages/coding-agent/test/interactive-mode-status.test.ts` 四处更新（fixture 启用真实分组、两处断言改分组格式、一处用例名对齐新语义）；`TODO.md` T11 补记进展。
 - **验证**（2026-10-15）：基线红 2 failed / 36 passed (38)；更新后 38/38 全绿；`biome check`（该文件）与 `tsgo --noEmit`（整仓）均通过。
 
+### 新增（T12 立项：pi Issue #30 模型目录漂移断言更新）
+
+- **为什么改**：上游模型目录刷新后 pi CI Build/Check 红（Issue #30）——`packages/ai` 3 个测试文件引用已下线的模型 ID（opencode-go `deepseek-v4-flash` → `deepseek-v4.1-flash`；nvidia `nemotron-3-super-120b-a12b` → `nemotron-3-ultra-550b-a55b`）；按 dev-workflow 测试文件归测试侧，Atlas 立项 T12 后由 Hopper 更新。
+- **改了什么**（2026-10-15 17:50）：`TODO.md` 新增 T12（背景、要做什么、worktree `~/Developer/pi-extensions-grouped` / 分支 `fix/ai-catalog-drift`）；测试产物留工作区、不提交。
+
+### 新增（T12 交付：pi Issue #30 模型目录漂移测试引用更新）
+
+- **为什么改**：承接 17:50 的 T12 立项——上游模型目录刷新导致 3 个测试文件引用已下线模型 ID；按 dev-workflow 测试文件归测试侧，由本项目更新后交回 Atlas 提交。
+- **改了什么**（2026-10-15 19:16）：pi worktree `~/Developer/pi-extensions-grouped`（分支 `fix/ai-catalog-drift`）三个测试文件——`openai-completions-tool-choice.test.ts`（6 处 ID + 2 处标题）、`supports-xhigh.test.ts`（删除 1 条已下架模型的过期用例）、`stream.test.ts`（标题 + ID）；`TODO.md` T12 补记进展。
+- **验证**（2026-10-15）：openai + supports-xhigh 两文件 78/78 全绿；stream 剥离本机 key（CI 对等）无失败；整仓 `tsgo --noEmit` 零错误。
+
 ## [0.1.4] - 2026-10-09
 
 ### 变更（T9 归档：pi Issue #22 全链完成）
