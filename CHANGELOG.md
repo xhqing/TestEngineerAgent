@@ -51,6 +51,17 @@
 - **改了什么**（2026-10-15 22:53）：`TODO.md` 删除 T11、T12 条目；`TODO-archive.md` 归档两条（保留原正文，标 ✅**已完成**，附完成说明）。
 - **外部事实实测**（2026-10-15）：Issue #28 CLOSED（14:24:08Z）/ PR #29 MERGED（14:24:06Z）；Issue #30 CLOSED（14:14:14Z）/ PR #31 MERGED（14:14:13Z）；Release v0.0.6 已发布（14:44:36Z，8 产物，非 draft / 非 prerelease）。
 
+### 新增（T13 立项：codef Issue #28 新窗用例出题）
+
+- **为什么改**：codef（Atlas 项目）Issue #28——`codef left` 命中「同目录已有左半平铺窗口」时需另开新窗口接管（用户需求）；按 dev-workflow 测试先行，Atlas 立项 T13 后由 Hopper 在功能分支出用例（先红）。
+- **改了什么**（2026-10-16 17:45）：`TODO.md` 新增 T13（背景、要做什么、约定契约、worktree `~/Developer/codef-left-new-window` / 分支 `feat/left-new-window`）；测试产物留工作区、不提交。
+
+### 新增（T13 交付：codef Issue #28 新窗用例落地 + 沙箱自检）
+
+- **为什么改**：承接 17:26 的 T13 立项——把 Issue #28（`codef left` 同目录已左半平铺时另开新窗接管）的先行用例交到开发侧（Atlas）手里，作为实现开工的条件；本项目文件侧（`TODO.md` 进展 + 本记录）按「文件增删改必记」纪律记录。
+- **改了什么**（2026-10-16 17:37）：codef worktree `~/Developer/codef-left-new-window`：新增 `test/left-new-window.test.sh`（43 项断言，复用 PATH 前置桩体系）；`.github/workflows/ci.yml` 增加运行步骤；`TODO.md` T13 补记进展。
+- **验证**（2026-10-16）：自跑红 14 通过 / 13 失败（红全为新行为断言、负向对照全绿）；沙箱参考实现 43/43 全绿（排除永真断言）；五类变异各被对应断言抓住（红 4 / 8 / 1 / 2 / 1 条）；CI 等价检查全过（含既有桩测试 82/82）。
+
 ## [0.1.4] - 2026-10-09
 
 ### 变更（T9 归档：pi Issue #22 全链完成）
