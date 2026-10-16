@@ -62,6 +62,12 @@
 - **改了什么**（2026-10-16 17:37）：codef worktree `~/Developer/codef-left-new-window`：新增 `test/left-new-window.test.sh`（43 项断言，复用 PATH 前置桩体系）；`.github/workflows/ci.yml` 增加运行步骤；`TODO.md` T13 补记进展。
 - **验证**（2026-10-16）：自跑红 14 通过 / 13 失败（红全为新行为断言、负向对照全绿）；沙箱参考实现 43/43 全绿（排除永真断言）；五类变异各被对应断言抓住（红 4 / 8 / 1 / 2 / 1 条）；CI 等价检查全过（含既有桩测试 82/82）。
 
+### 变更（T13 归档：codef Issue #28 全链完成）
+
+- **为什么改**：codef 侧全链完成——PR #31 把先行用例（连同实现与 CI 步骤）合入 main、Issue #28 自动关闭、v0.6.0 已发布；按 TODO 纪律把 T13 从 `TODO.md` 移入 `TODO-archive.md` 闭环。
+- **改了什么**（2026-10-16 18:05）：`TODO.md` 删除 T13 条目；`TODO-archive.md` 归档 T13（保留原正文，标 ✅**已完成**，附完成说明）。
+- **外部事实实测**（2026-10-16）：`xhqing/codef` Issue #28 已 CLOSED（COMPLETED，09:56:41Z）；PR #31 已 MERGED（09:56:40Z）；Release v0.6.0 已发布（10:01:58Z，非 draft / 非 prerelease）；主仓库 main 实测 `test/left-new-window.test.sh` 43/43 全绿、既有桩测试 82/82 全绿、交付测试文件与快照逐字节一致。
+
 ## [0.1.4] - 2026-10-09
 
 ### 变更（T9 归档：pi Issue #22 全链完成）
