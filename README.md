@@ -69,7 +69,7 @@ Infrastructure squad (alongside Tinker, Prometheus, Hermes, Anvil, Atlas, Ada, A
 | Anvil (BackendEngineerAgent) | CC-BRIDGE |
 | Alfred (DeviceStewardAgent) | ResourceMonitor |
 | Hermes (NetOpsAgent) | XPilot |
-| Markowitz (QuantStrategistAgent) | gridtrader |
+| Mark (QuantStrategistAgent) | gridtrader |
 | Ada (NeuralCoreAgent) | AgentCortex |
 
 Boundary with Prometheus (CapabilityManagerAgent): test assets living in each project repo belong to Hopper; reusable testing methodology and templates are distributed through Prometheus's single open-source outlet.

@@ -74,6 +74,11 @@
 - **改了什么**（2026-10-17 15:30）：新建 `.pi/.gitkeep`（空占位文件，保持目录随仓库提交）。
 - **无需同步说明**：本项目 `CLAUDE.md` 无「子项目清单」节（无子项目）、不需改；`~/.pi/agent/CLAUDE.md` 为全局 `~/.claude/CLAUDE.md` 的软链接，已自动生效。
 
+### 变更（子项目表拟人名更名：Markowitz → Mark）
+
+- **为什么改**：用户 2026-10-17 要求把量化 agent 拟人名 Markowitz 改为 Mark（项目名 QuantStrategistAgent 不变）；我项目 README 中英双版的子项目表（gridtrader 行）含旧名，需同步（改动由 Kit 经 intercom 委托）。
+- **改了什么**（2026-10-17 18:43）：`README.md`（`Markowitz (QuantStrategistAgent)` → `Mark (QuantStrategistAgent)`）与 `README_cn.md`（`Markowitz（QuantStrategistAgent）` → `Mark（QuantStrategistAgent）`）两版同改。
+
 ## [0.1.4] - 2026-10-09
 
 ### 变更（T9 归档：pi Issue #22 全链完成）

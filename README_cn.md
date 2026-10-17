@@ -69,7 +69,7 @@ main 永远绿是设计出来的：main 只见「红绿闭环过」的完整状�
 | Anvil（BackendEngineerAgent） | CC-BRIDGE |
 | Alfred（DeviceStewardAgent） | ResourceMonitor |
 | Hermes（NetOpsAgent） | XPilot |
-| Markowitz（QuantStrategistAgent） | gridtrader |
+| Mark（QuantStrategistAgent） | gridtrader |
 | Ada（NeuralCoreAgent） | AgentCortex |
 
 与 Prometheus（CapabilityManagerAgent）的边界：各项目仓库里的测试资产归 Hopper；可复用的测试方法论与模板，经 Prometheus 的通用能力单一出口分发。
