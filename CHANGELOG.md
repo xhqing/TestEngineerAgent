@@ -85,6 +85,12 @@
 - **改了什么**（2026-10-18 23:31）：codef worktree `~/Developer/codef-stale-panel`：新增 `test/left-pairing-panel.test.sh`（62 项断言，复用 PATH 前置桩体系）；既有两个测试文件的桩各加一处「`half-backdrop` → no」分支（防实现落地后既有用例被扰动，断言未动）；`.github/workflows/ci.yml` 增加运行步骤；`TODO.md` T14 补记进展。
 - **验证**（2026-10-18）：自跑红 31 通过 / 29 失败（红全为新行为断言、负向对照全绿）；沙箱参考实现 62/62 全绿（排除永真断言）；六类变异各被对应断言抓住（红 8 / 15 / 4 / 6 / 2 / 8 条）；CI 等价检查全过（含既有桩测试 82/82 + 43/43）。
 
+### 变更（T14 归档：codef Issue #24 全链完成）
+
+- **为什么改**：codef 侧全链完成——PR #37 把先行用例（连同实现与 CI 步骤）合入 main、Issue #24 关闭、v0.6.1 已发布（Atlas 亦回执确认可归档）；按 TODO 纪律把 T14 从 `TODO.md` 移入 `TODO-archive.md` 闭环。
+- **改了什么**（2026-10-19 00:14）：`TODO.md` 删除 T14 条目；`TODO-archive.md` 归档 T14（保留原正文，标 ✅**已完成**，附完成说明）。
+- **外部事实实测**（2026-10-19）：`xhqing/codef` Issue #24 已 CLOSED（COMPLETED，14:57:45Z）；PR #37 MERGED（15:49:20Z）；Release v0.6.1 已发布（16:13:37Z，非 draft / 非 prerelease；bump PR #38 merged 16:11:42Z）；主仓库 main 实测三套件 62/62 + 43/43 + 82/82 全绿。
+
 ## [0.1.4] - 2026-10-09
 
 ### 变更（T9 归档：pi Issue #22 全链完成）
