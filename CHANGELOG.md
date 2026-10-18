@@ -79,6 +79,12 @@
 - **为什么改**：用户 2026-10-17 要求把量化 agent 拟人名 Markowitz 改为 Mark（项目名 QuantStrategistAgent 不变）；我项目 README 中英双版的子项目表（gridtrader 行）含旧名，需同步（改动由 Kit 经 intercom 委托）。
 - **改了什么**（2026-10-17 18:43）：`README.md`（`Markowitz (QuantStrategistAgent)` → `Mark (QuantStrategistAgent)`）与 `README_cn.md`（`Markowitz（QuantStrategistAgent）` → `Mark（QuantStrategistAgent）`）两版同改。
 
+### 新增（T14 交付：codef Issue #24 残留配对面板先行用例落地 + 沙箱自检）
+
+- **为什么改**：承接 23:09 的 T14 立项（Atlas 经 intercom 派单）——把 Issue #24 收尾修复（残留配对面板自动清理）的先行用例交到开发侧，作为实现开工的条件；本项目文件侧（`TODO.md` 进展 + 本记录）按「文件增删改必记」纪律记录。
+- **改了什么**（2026-10-18 23:31）：codef worktree `~/Developer/codef-stale-panel`：新增 `test/left-pairing-panel.test.sh`（62 项断言，复用 PATH 前置桩体系）；既有两个测试文件的桩各加一处「`half-backdrop` → no」分支（防实现落地后既有用例被扰动，断言未动）；`.github/workflows/ci.yml` 增加运行步骤；`TODO.md` T14 补记进展。
+- **验证**（2026-10-18）：自跑红 31 通过 / 29 失败（红全为新行为断言、负向对照全绿）；沙箱参考实现 62/62 全绿（排除永真断言）；六类变异各被对应断言抓住（红 8 / 15 / 4 / 6 / 2 / 8 条）；CI 等价检查全过（含既有桩测试 82/82 + 43/43）。
+
 ## [0.1.4] - 2026-10-09
 
 ### 变更（T9 归档：pi Issue #22 全链完成）
