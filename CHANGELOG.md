@@ -102,6 +102,12 @@
 - **改了什么**（2026-10-19 00:22）：pi worktree `~/Developer/pi`（分支 `chore/rename-pi-harness`）`packages/ai/test/zai-coding-plan-models.test.ts` 1 行（GLM-4.6V `cost.cacheRead: 0` → `0.05`，与上游 `482c1381` 一致）；`TODO.md` T15 补记进展。
 - **验证**（2026-10-19）：改后本地红（旧数据 0 vs 0.05，属预期）；临时数据改 0.05 后 **3/3 全绿**（跑完已还原、逐字节一致）；最终以 PR CI 为准。
 
+### 变更（T15 归档：pi-harness PR #34 CI 修复闭环）
+
+- **为什么改**：Atlas 通知 T15 闭环——PR #34 已合并、CI 全绿（build-check-test 3m14s），修复已随 PR 进 main；按 TODO 纪律把 T15 从 `TODO.md` 移入 `TODO-archive.md`。
+- **改了什么**（2026-10-19 01:52）：`TODO.md` 删除 T15 条目；`TODO-archive.md` 归档 T15（保留原正文，标 ✅**已完成**，附完成说明）。
+- **外部事实实测**（2026-10-19）：`xhqing/pi-harness` PR #34 已 MERGED（squash 74deeb534，2026-10-18T17:00:07Z）；CI run 39147307820 全绿；`origin/main` 上 GLM-4.6V 断言为 `cacheRead: 0.05`。
+
 ## [0.1.4] - 2026-10-09
 
 ### 变更（T9 归档：pi Issue #22 全链完成）
