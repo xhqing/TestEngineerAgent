@@ -91,6 +91,17 @@
 - **改了什么**（2026-10-19 00:14）：`TODO.md` 删除 T14 条目；`TODO-archive.md` 归档 T14（保留原正文，标 ✅**已完成**，附完成说明）。
 - **外部事实实测**（2026-10-19）：`xhqing/codef` Issue #24 已 CLOSED（COMPLETED，14:57:45Z）；PR #37 MERGED（15:49:20Z）；Release v0.6.1 已发布（16:13:37Z，非 draft / 非 prerelease；bump PR #38 merged 16:11:42Z）；主仓库 main 实测三套件 62/62 + 43/43 + 82/82 全绿。
 
+### 变更（T15 立项：pi-harness PR #34 CI 红的测试断言对齐上游数据漂移）
+
+- **为什么改**：Atlas 按 dev-workflow 下发 pi-harness（原 xhqing/pi）PR #34 的 CI 修复——`packages/ai/test/zai-coding-plan-models.test.ts` 的 GLM-4.6V Coding Plan `cost.cacheRead` 断言（0）与 CI 构建 hydrate 后的上游 catalog 数据（0.05）不符、Test 步骤红；上游 earendil-works/pi 同日以 482c1381 修同款（改这一行断言）。测试文件归测试方，故下发。
+- **改了什么**（2026-10-19 00:17）：`TODO.md` 新增 T15（背景、要做什么、验证方式、关联）；测试产物按 2026-09-30 口径只留工作区、由开发侧与 PR #34 一并提交。
+
+### 变更（T15 交付：pi-harness PR #34 断言对齐上游数据漂移）
+
+- **为什么改**：承接 00:17 的 T15 立项——PR #34（改名）CI Test 步骤红于 GLM-4.6V Coding Plan `cost.cacheRead` 断言与 CI 构建 hydrate 的上游数据（0.05）不符；上游 earendil-works/pi 同日以 `482c1381` 修同款。按 dev-workflow 测试文件归测试侧，由本项目修复后交回 Atlas 随 PR 提交。
+- **改了什么**（2026-10-19 00:22）：pi worktree `~/Developer/pi`（分支 `chore/rename-pi-harness`）`packages/ai/test/zai-coding-plan-models.test.ts` 1 行（GLM-4.6V `cost.cacheRead: 0` → `0.05`，与上游 `482c1381` 一致）；`TODO.md` T15 补记进展。
+- **验证**（2026-10-19）：改后本地红（旧数据 0 vs 0.05，属预期）；临时数据改 0.05 后 **3/3 全绿**（跑完已还原、逐字节一致）；最终以 PR CI 为准。
+
 ## [0.1.4] - 2026-10-09
 
 ### 变更（T9 归档：pi Issue #22 全链完成）
