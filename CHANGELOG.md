@@ -4,6 +4,20 @@
 
 ## [未发布]
 
+### 新增（T18 / T17 交付：pi-harness Issue #9 / #10 先行测试落地）
+
+- **为什么改**：承接同日 10:58 的 T18 / T17 立项——把 Issue #9（API Key 套餐 provider 底栏缺 `(sub)`）与 Issue #10（编辑器 Cmd+A 全选）的先行测试交到开发侧（Atlas）手里；本项目文件侧（`TODO.md` 进展 + 本记录）按「文件增删改必记」纪律记录。
+- **改了什么**（2026-10-23 12:00）：
+  - pi-harness worktree `~/Developer/pi-subscription`（T18）：新增 `packages/ai/test/api-key-subscription.test.ts`；改 `packages/coding-agent/test/model-runtime-auth-options.test.ts`（新增 2 例）与 `packages/coding-agent/test/footer-width.test.ts`（Kimi 用例改传 `usingSubscription: true` + 新增硬编码移除钉住例）。
+  - pi-harness worktree `~/Developer/pi-select-all`（T17）：新增 `packages/tui/test/editor-select-all.test.ts`（node:test，13 条）。
+  - `TODO.md` T18 / T17 各补记进展。
+- **验证**（2026-10-23）：T18 绿态 coding-agent 23/23、ai 2/2，红态 3 条预期红，`tsgo --noEmit` 通过；T17 绿态 13/13、全量 `npm test` 退出码 0，红态 7 条预期红，`tsgo --noEmit` 通过。T18 构造刷新时发现契约里单次 `await runtime.getAvailable()` 不可靠（被 `registerNativeProvider` 内部未等待的 refresh 作废），改用 `await runtime.refresh({ allowNetwork: false })` + 前置断言，断言未放宽（已向 Atlas 如实说明）。两处测试文件均走 `# TEST_CASES_WRITE_OK` 标记通道写入，以未提交工作区改动留在各自 worktree（不 add / 不 commit / 不 push / 不开 PR），实现源码未动。
+
+### 新增（T16～T18 立项：pi-harness 三条 Issue 的先行用例）
+
+- **为什么改**：Atlas 按用户「把 pi-harness 的 Issue 全部解决」的要求，对四条 open Issue（#9、#10、#11、#12）启动 dev-workflow；按测试先行流程，先由 Hopper 在各自功能分支上出回归 / 验收测试（先红），开发才开工实现。
+- **改了什么**（2026-10-23 10:58）：`TODO.md` 新增 T16（Issue #11 ModelRuntime 可用性刷新序号竞态，worktree `~/Developer/pi-model-race` / 分支 `fix/startup-model-race`）、T18（Issue #9 API Key 接入的套餐 provider 缺 `(sub)` 标记，worktree `~/Developer/pi-subscription` / 分支 `feat/api-key-subscription`）、T17（Issue #10 编辑器 Cmd+A 全选，worktree `~/Developer/pi-select-all` / 分支 `feat/editor-select-all`）；每条都冻结了接口契约、测试编排与「测试产物只留工作区、不提交」口径。Issue #12（包名去 scope）待前三条合并后再下发（全仓机械改名，放最后避免冲突）。
+
 ### 新增（T10 立项：codef Issue #25 先行用例出题）
 
 - **为什么改**：Atlas 按 dev-workflow 下发 codef（Atlas 项目）Issue #25 的运行行为变更需求——`codef left` 先判断承载命令的终端窗口是否处于 macOS 原生全屏、是则先退出其全屏再走原有「VSCode 左半屏全屏」流程（详见 Issue #25）；按测试先行流程，先由 Hopper 在功能分支出用例（先红），开发才开工实现。
