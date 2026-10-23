@@ -4,6 +4,12 @@
 
 ## [未发布]
 
+### 变更（T16～T20 收尾归档：pi-harness 四条 Issue 全链完成、v0.0.7 已发布）
+
+- **为什么改**：T16 / T17 / T18 / T19 / T20 五条已全部随对应 PR 合并进 main、四条 Issue 已关闭、v0.0.7 已发布（Atlas 通知）；按 TODO 纪律把已完成条目从 `TODO.md` 移入 `TODO-archive.md` 闭环。
+- **改了什么**（2026-10-23 15:22）：`TODO.md` 删除 T16 / T20（橙色）、T18（黄色）、T17 / T19（绿色）五条；`TODO-archive.md` 按紧急度归档（橙色接 T16 / T20，新增黄色节放 T18，绿色接 T17 / T19），均保留原正文、标 `✅**已完成**（完成：2026-10-23 15:22）` 并附一句交付结果。
+- **外部事实实测**（2026-10-23）：`xhqing/pi-harness` 四个 Issue #9 / #10 / #11 / #12 均 CLOSED；PR #35（#11）/ #36（目录漂移）/ #37（#9）/ #38（#10）/ #39（#12）/ #40（bump 0.0.7）均 merged；Release v0.0.7 已发布（draft=false / prerelease=false，2026-10-23T07:20:51Z，8 个资产：tarball + 6 平台二进制 + SHA256SUMS）。
+
 ### 新增（T19 交付：pi-harness Issue #12 测试侧包名去 scope + 包名回归测试）
 
 - **为什么改**：Issue #12 把本 fork 自有 workspace 包名从 `@earendil-works/*` 去 scope（核心目标 `pi-coding-agent`）；Atlas 已改完非测试侧（package.json / src / scripts / docs / lockfile / shrinkwrap / install-lock）并下发 T19，由测试侧改测试文件并新建包名回归测试。
