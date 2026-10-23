@@ -4,6 +4,12 @@
 
 ## [未发布]
 
+### 新增（T19 交付：pi-harness Issue #12 测试侧包名去 scope + 包名回归测试）
+
+- **为什么改**：Issue #12 把本 fork 自有 workspace 包名从 `@earendil-works/*` 去 scope（核心目标 `pi-coding-agent`）；Atlas 已改完非测试侧（package.json / src / scripts / docs / lockfile / shrinkwrap / install-lock）并下发 T19，由测试侧改测试文件并新建包名回归测试。
+- **改了什么**（2026-10-23 13:30）：worktree `~/Developer/pi-rename`，测试侧共 222 个文件——218 个由 Atlas 的 `rename-own-packages.py --include-tests` 机械改名（396 处引用）；手工补 3 个脚本正则看不见的文件（`packages/chord/test/boundary.test.ts` 的 scope 前缀断言改写为内部包名单、`packages/coding-agent/test/package-command-paths.test.ts` 与 `packages/evals/vitest.test.config.ts`）；另有 4 个已被机械改名的文件补漏（`config.test.ts` / `native-module-path.test.ts` / `check-runtime-deps.test.mjs` 的转义斜杠 / `coding-agent-consumer.test.mjs` 的模板拼接）。新增 `scripts/package-names.test.mjs`（workspace 包名无 `/` + 自有旧名残留 0，含转义形式；显式允许 `loader.ts` 的 legacy scoped alias 块、`CHANGELOG.md`、二进制）。
+- **验证**（2026-10-23）：新测试 2/2 绿且做过正反验证（植入旧名 / scoped 包名 → 红，恢复 → 绿）；`npm run test:scripts` exit 0；抽样各包（coding-agent 46+5、chord 1、tui 255、evals 15、agent 24、client 15、server 6）全绿；`tsgo --noEmit` 0 错误；六个仓库 check 脚本全过。两个需 build 的实验性测试文件由 Atlas 的 build + 全量测试覆盖。测试产物以未提交工作区改动留在 worktree（不 add / 不 commit / 不 push / 不开 PR）。
+
 ### 新增（T20 交付：pi-harness 上游模型目录漂移修复）
 
 - **为什么改**：pi-harness PR #35（#11 修复）的 CI 在 Check 步骤红——上游模型目录漂移，`packages/ai` 测试引用了已下线的模型 ID；三条 PR（#11 / #9 / #10）都卡在这条红灯上。Atlas 建好 worktree `~/Developer/pi-catalog-drift-2`（已 hydrate 最新目录）后下发 T20，要求测试侧把引用与随目录变化的断言改准。
