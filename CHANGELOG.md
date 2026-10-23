@@ -4,6 +4,15 @@
 
 ## [未发布]
 
+### 新增（T20 交付：pi-harness 上游模型目录漂移修复）
+
+- **为什么改**：pi-harness PR #35（#11 修复）的 CI 在 Check 步骤红——上游模型目录漂移，`packages/ai` 测试引用了已下线的模型 ID；三条 PR（#11 / #9 / #10）都卡在这条红灯上。Atlas 建好 worktree `~/Developer/pi-catalog-drift-2`（已 hydrate 最新目录）后下发 T20，要求测试侧把引用与随目录变化的断言改准。
+- **改了什么**（2026-10-23 12:38）：实际改了 **12 个测试文件**（9 个 tsgo 点名 + 3 个只有运行时会红的断言漂移）：
+  - 9 个类型类：`baseten-models.test.ts`（Kimi-K3，thinking map 按当前目录重写）、`image-tool-result.test.ts`（Baseten Kimi-K3）、`github-copilot-anthropic.test.ts`（claude-opus-4.8）、`openai-responses-compat.test.ts` / `openai-responses-tool-result-images.test.ts` / `stream.test.ts`（copilot gpt-5.4-nano）、`tool-call-id-normalization.test.ts`（两侧 gpt-5.4-nano）、`openai-completions-tool-choice.test.ts`（deepseek-r1-0528）、`together-models.test.ts`（MiniMax-M3）。
+  - 3 个运行时类：`providers.test.ts`（moonshotai-cn 的 Kimi K3 价已单列）、`supports-xhigh.test.ts`（kimi-coding K3 新增 off）、`xai-responses.test.ts`（grok-4.5 / grok-4.3 新增 xhigh）。
+  - pi-harness 两份 CHANGELOG 条目补记「运行时断言同一轮对齐」；`TODO.md` T20 补记进展。
+- **验证**（2026-10-23）：`npx tsgo --noEmit` → 0 错误；9 个受影响文件（无 key 的 CI 等价环境）→ exit 0（93 passed / 282 skipped）；`packages/ai` 全量 → 122 files passed / 26 skipped，1066 passed 0 failed；全仓 `npm test` 除 coding-agent 两例外全绿。两个 coding-agent 阻塞项已报 Atlas：`model-resolver.test.ts` 红因 `src/core/model-resolver.ts` 的 github-copilot 默认值 `gpt-5.4` 已下线（建议按上游改为 `gpt-6.1-sol`，**属实现源码、待开发侧处理**）；`experimental-remote-runtime.test.ts` 单跑 26/26 绿、全量偶发缺 `run_end`（flake、非漂移）。测试产物以未提交工作区改动留在 worktree（不 add / 不 commit / 不 push / 不开 PR）。
+
 ### 新增（T18 / T17 交付：pi-harness Issue #9 / #10 先行测试落地）
 
 - **为什么改**：承接同日 10:58 的 T18 / T17 立项——把 Issue #9（API Key 套餐 provider 底栏缺 `(sub)`）与 Issue #10（编辑器 Cmd+A 全选）的先行测试交到开发侧（Atlas）手里；本项目文件侧（`TODO.md` 进展 + 本记录）按「文件增删改必记」纪律记录。
