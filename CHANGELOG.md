@@ -4,6 +4,12 @@
 
 ## [未发布]
 
+### 变更（T21 归档：XPilot Issue #1 全链闭环）
+
+- **为什么改**：Atlas 通知 T21 已全流程闭环（完成时间 2026-10-26 18:08）——PR #3 合并、Issue #1 关闭、0.6.4 已发版并真机验证；按 TODO 纪律把已完成条目从 `TODO.md` 移入 `TODO-archive.md` 闭环。
+- **改了什么**（2026-10-26 19:15）：`TODO.md` 删除 T21 整条（红色节仅此一条，清空后连同空的 `## 🔴 红色紧急度` 标题一起移除）；`TODO-archive.md` 新增 `## 🔴 红色紧急度` 分节置顶，原条目正文一字不动、标题行追加 `✅**已完成**（完成：2026-10-26 18:08）`，并补 `**完成说明**`：44 条先行用例与实现同一次提交进 PR #3（`fixes #1`）→ CI 全绿 squash auto-merge → Issue #1 自动关闭 → bump 0.6.4（PR #4）+ Release v0.6.4；真机验证（旧 `/tmp` 实例被识别为 Running、PID 自愈、`log_file` 迁移、切新 monitor 后连通性 OK）；同期 XPilot 落地首套 CI（#2）+ main 分支保护；后续增强拆为 Issue #5，与本次测试体系无重叠、届时另开新 T 条目。
+- **外部事实实测**（2026-10-26，`gh` 查询 `xhqing/XPilot`）：PR #3 `MERGED`（2026-10-26T10:01:56Z，merge commit `66cb877`）；Issue #1 `CLOSED` / `COMPLETED`；Release `v0.6.4` 已发布（2026-10-26T10:04:37Z，draft=false / prerelease=false，产物 `xpilot-0.6.4-py3-none-any.whl` + `xpilot-0.6.4.tar.gz`）。
+
 ### 变更（T21 后续：修掉 4 条依赖宿主机临时目录的断言，CI 环境无关）
 
 - **为什么改**：XPilot PR #3（xhqing/XPilot）的 CI 在 linux runner 上 4 failed / 156 passed，红的全在我的新用例里——断言用了「路径不以 /tmp 开头」这类判据，而 CI 的 pytest `tmp_path` 本身就在 `/tmp/pytest-of-runner/...` 下，被检路径其实是正确的（`<config>/run/xpilot.pid`），属测试本身的宿主依赖缺陷、非实现问题。
