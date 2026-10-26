@@ -4,6 +4,12 @@
 
 ## [未发布]
 
+### 变更（T21 后续：修掉 4 条依赖宿主机临时目录的断言，CI 环境无关）
+
+- **为什么改**：XPilot PR #3（xhqing/XPilot）的 CI 在 linux runner 上 4 failed / 156 passed，红的全在我的新用例里——断言用了「路径不以 /tmp 开头」这类判据，而 CI 的 pytest `tmp_path` 本身就在 `/tmp/pytest-of-runner/...` 下，被检路径其实是正确的（`<config>/run/xpilot.pid`），属测试本身的宿主依赖缺陷、非实现问题。
+- **改了什么**（2026-10-26 19:05，worktree `~/Developer/XPilot-state-fix`，只改 4 条断言、不加删用例、不动夹具与常量）：`tests/test_runtime_dir.py` 的 `test_all_state_files_live_under_runtime_dir` 改为按属性比字面量旧路径（`/tmp/xpilot.pid` / `/tmp/xpilot-xray.json` / `/tmp/xpilot-xray-stdout.log` / `/tmp/xpilot-xray-stderr.log`）、`test_default_log_file_is_under_config_dir` 改为 `!= '/tmp/xpilot.log'`；`tests/test_runtime_health_probe.py` 两条改为 `os.path.dirname(cfg_path) == runtime_dir` 且 `!= '/tmp/xpilot-probe-<pid>-<port>.json'`；顺带订正被改类的 docstring。`TODO.md` T21 补记进展。
+- **验证**（2026-10-26）：`python3 -m pytest -q` → 160 passed；`TMPDIR=/tmp/pytest-fake python3 -m pytest -q tests/test_runtime_dir.py tests/test_runtime_health_probe.py` → 14 passed；另以 `os.path.abspath` 拼出字面量 `/tmp/...` 复算 6 个路径值（macOS 的 /tmp 是 /private/tmp 软链，pytest 解析真路径、本机造不出真实 /tmp 前缀）——旧判据 6 个全 False（即 CI 红因）、新判据全 True；`ruff check` 两文件 0 条。改动留在工作区未提交，由 Atlas 随实现一并提交推送。
+
 ### 新增（T21 交付：XPilot Issue #1 先行测试 44 条，40 红 / 4 绿守卫）
 
 - **为什么改**：用户 2026-10-26 报「网络出问题」，排查确认是 XPilot 自身静默失效——xray 运行时状态文件硬编码在 `/tmp`，被 macOS 定期清理后进程仍在跑、端口仍在监听，但 `xpilot status` 显示 Stopped，监控与自动切换不干预，境外访问静默 TCP 超时约 12 天；期间再 `start` 还会因 `SO_REUSEPORT` 起第二个实例。Issue #1 列了 8 处 `/tmp` 硬编码与 4 条修复建议，属核心开发，按 dev-workflow 测试先行；XPilot 已由已注销的 Hermes 移交 Atlas，这是回归防护网首次进入 XPilot。
