@@ -4,6 +4,17 @@
 
 ## [未发布]
 
+### 新增（T21 交付：XPilot Issue #1 先行测试 44 条，40 红 / 4 绿守卫）
+
+- **为什么改**：用户 2026-10-26 报「网络出问题」，排查确认是 XPilot 自身静默失效——xray 运行时状态文件硬编码在 `/tmp`，被 macOS 定期清理后进程仍在跑、端口仍在监听，但 `xpilot status` 显示 Stopped，监控与自动切换不干预，境外访问静默 TCP 超时约 12 天；期间再 `start` 还会因 `SO_REUSEPORT` 起第二个实例。Issue #1 列了 8 处 `/tmp` 硬编码与 4 条修复建议，属核心开发，按 dev-workflow 测试先行；XPilot 已由已注销的 Hermes 移交 Atlas，这是回归防护网首次进入 XPilot。
+- **改了什么**（2026-10-26 18:40，worktree `~/Developer/XPilot-state-fix` / 分支 `fix/state-files-out-of-tmp`，测试文件走 `# TEST_CASES_WRITE_OK` 标记通道写入）：新增 4 个测试文件共 44 条用例，按 Atlas 定稿的十条接口契约分割——`tests/test_runtime_dir.py`（12 条：契约 1 `get_runtime_dir` 优先级 / 绝对路径 / 0700、契约 2 四个状态文件路径、契约 8 默认 `log_file` 与窄迁移）、`tests/test_runtime_state.py`（23 条：契约 3 `probe_runtime` 判定表、契约 4 `is_running` / `_get_pid`、契约 5 `start` 孤儿处置、契约 6 `running_config_matches_current`、契约 7 `get_status` 新字段）、`tests/test_runtime_cli.py`（7 条：契约 9 的 `AUTO_SWITCH_PID_FILE`、launchd plist 日志路径、status 与 subscription update 的 restart 提示）、`tests/test_runtime_health_probe.py`（2 条：契约 10 探活临时配置路径）。`TODO.md` T21 补记进展。
+- **验证**（2026-10-26）：`python3 -m pytest -q` → 40 failed / 120 passed（新用例 40 红、4 条行为守卫绿；既有 116 条单独跑全绿；本机无 `python` 命令，实际用 `python3`）；`git diff` 为空、实现与既有测试零改动。断言有效性双重验证：`tmp/refcheck/` 沙箱按契约写参考实现后 160/160 全绿（证明未过约束），7 类变异（端口不兜底 / 不自愈 PID / 已运行仍 spawn / 多实例无警告 / 迁移误伤自定义路径 / status 提示条件写反 / 探活回 `/tmp`）逐一被对应用例抓住。`ruff check` 4 个新文件 0 条（全仓基线本有 37 条、全在既有文件）。测试产物以未提交工作区改动留在 worktree（不 `git add`、不 commit、不 push、不开 PR）。
+
+### 变更（新增 T21：为 XPilot Issue #1 出测试）
+
+- **为什么改**：Atlas 接手 XPilot（原 Hermes / NetOpsAgent 名下子项目）后要修 Issue #1（运行时状态文件硬编码 `/tmp`，目录被清理后状态错位、静默断网约 12 天）；按 dev-workflow 测试先行，需测试侧先出题、自跑见红。
+- **改了什么**：`TODO.md` 🔴 红色紧急度新增 **T21**——写清背景、worktree `~/Developer/XPilot-state-fix` / 分支 `fix/state-files-out-of-tmp`、约定接口（`get_runtime_dir`、runtime 目录四项属性、`probe_runtime()` 交叉校验、`is_running()` 安全回归、`start()` 孤儿处置、`running_config_matches_current()`、`get_status()` 新增键、日志默认路径与窄迁移、CLI 提示、探活临时配置），以及「不真起 xray / 保持既有 116 条全绿」的边界。
+
 ### 变更（Hermes 注销：清理本项目里的同组成员与项目映射引用）
 
 - **为什么改**：用户于 2026-10-26 注销 Hermes（NetOpsAgent），其唯一子项目 XPilot 已移交 Atlas（FullStackEngineerAgent），全局注册表 `~/.pi/agent/docs/agents-registry.md` 已同步（Hermes 进「已注销 / 已退役」段、XPilot 映射改挂 Atlas）。本项目文档里仍把 Hermes 列为同组活跃成员、把 XPilot 挂在其名下，与注册表不一致，需按注册表清理——本项目已无任何活跃职责依赖 Hermes之 处，属纯文档同步。
