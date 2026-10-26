@@ -61,14 +61,13 @@ main 永远绿是设计出来的：main 只见「红绿闭环过」的完整状�
 
 ## 在团队中的位置
 
-基础设施小组成员（与 Tinker / Prometheus / Hermes / Anvil / Atlas / Ada / Alfred 同组），独立于销售流水线。Hopper 服务所有产出软件的 agent：
+基础设施小组成员（与 Tinker / Prometheus / Anvil / Atlas / Ada / Alfred 同组），独立于销售流水线。Hopper 服务所有产出软件的 agent：
 
 | Agent | 软件项目 |
 |---|---|
-| Atlas（FullStackEngineerAgent） | zcode-cli、zcode-vsce |
+| Atlas（FullStackEngineerAgent） | zcode-cli、zcode-vsce、XPilot |
 | Anvil（BackendEngineerAgent） | CC-BRIDGE |
 | Alfred（DeviceStewardAgent） | ResourceMonitor |
-| Hermes（NetOpsAgent） | XPilot |
 | Mark（QuantStrategistAgent） | gridtrader |
 | Ada（NeuralCoreAgent） | AgentCortex |
 

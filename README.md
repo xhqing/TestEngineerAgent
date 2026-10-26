@@ -61,14 +61,13 @@ Main stays permanently green by design: main only ever receives complete red-gre
 
 ## Position in the team
 
-Infrastructure squad (alongside Tinker, Prometheus, Hermes, Anvil, Atlas, Ada, Alfred), independent of the sales pipeline. Hopper serves every agent that ships software:
+Infrastructure squad (alongside Tinker, Prometheus, Anvil, Atlas, Ada, Alfred), independent of the sales pipeline. Hopper serves every agent that ships software:
 
 | Agent | Software projects |
 |---|---|
-| Atlas (FullStackEngineerAgent) | zcode-cli, zcode-vsce |
+| Atlas (FullStackEngineerAgent) | zcode-cli, zcode-vsce, XPilot |
 | Anvil (BackendEngineerAgent) | CC-BRIDGE |
 | Alfred (DeviceStewardAgent) | ResourceMonitor |
-| Hermes (NetOpsAgent) | XPilot |
 | Mark (QuantStrategistAgent) | gridtrader |
 | Ada (NeuralCoreAgent) | AgentCortex |
 

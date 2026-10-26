@@ -4,6 +4,14 @@
 
 ## [未发布]
 
+### 变更（Hermes 注销：清理本项目里的同组成员与项目映射引用）
+
+- **为什么改**：用户于 2026-10-26 注销 Hermes（NetOpsAgent），其唯一子项目 XPilot 已移交 Atlas（FullStackEngineerAgent），全局注册表 `~/.pi/agent/docs/agents-registry.md` 已同步（Hermes 进「已注销 / 已退役」段、XPilot 映射改挂 Atlas）。本项目文档里仍把 Hermes 列为同组活跃成员、把 XPilot 挂在其名下，与注册表不一致，需按注册表清理——本项目已无任何活跃职责依赖 Hermes之 处，属纯文档同步。
+- **改了什么**（2026-10-26 17:50，均由 Kit / ExecutiveAssistantAgent 会话代改）：
+  - `CLAUDE.md`（`AGENTS.md` 为其软链接）：第 7 行「你是谁」的跨项目服务对象列举去掉 Hermes；第 58 行「你的位置」的基础设施小组同组成员列举去掉 Hermes。
+  - `README.md` / `README_cn.md`（双语同步）：「在团队中的位置」段落的小组成员列举去掉 Hermes；项目映射表删除 `Hermes（NetOpsAgent） | XPilot` 一行，XPilot 并入 Atlas 行（`zcode-cli, zcode-vsce, XPilot` / `zcode-cli、zcode-vsce、XPilot`）。
+- **验证**（2026-10-26）：`grep -rn "Hermes" README.md README_cn.md CLAUDE.md` 零命中（仅 `TODO-archive.md` 历史条目保留 Hermes 字样——那是已归档的历史记录，按纪律不改写）。
+
 ### 变更（T16～T20 收尾归档：pi-harness 四条 Issue 全链完成、v0.0.7 已发布）
 
 - **为什么改**：T16 / T17 / T18 / T19 / T20 五条已全部随对应 PR 合并进 main、四条 Issue 已关闭、v0.0.7 已发布（Atlas 通知）；按 TODO 纪律把已完成条目从 `TODO.md` 移入 `TODO-archive.md` 闭环。
