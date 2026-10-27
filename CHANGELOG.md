@@ -4,6 +4,12 @@
 
 ## [未发布]
 
+### 变更（T23 归档：XPilot Issue #9 全链闭环，0.7.1 已发版）
+
+- **为什么改**：Atlas 通知 T23 全链完成（PR #10 合并、Issue #9 关闭、0.7.1 已发版），按 TODO 纪律把已完成条目移入归档，并实测核对远端事实。
+- **改了什么**（2026-10-27 13:3x）：`TODO.md` 移除 T23 整条（橙色节仍保留 T1 / T5 / T7 / T8 与黄色 T3、绿色 T4）；`TODO-archive.md` 橙色节末尾新增该条，正文一字不动、标题行追加 `✅**已完成**（完成：2026-10-27 13:32）`，补 `**完成说明**`：PR #10（`75b57ea`，squash）合并、`fixes #9` 生效、Issue CLOSED；测试与实现同一次提交 `4fae751`（3 个文件、193 insertions / 1 deletion），全量 263 passed；真机验证（隔离 venv 装 Release 产物）metadata / `--version` / `__version__` 三处均为 0.7.1；发版链 bump 0.7.1（PR #11，`592bd42`）→ tag `v0.7.1` → Release 含 whl + tar.gz；worktree 与分支已清理；回顾两条回归锁手法（源码正则扫硬编码、变异锁死三级回退顺序）。
+- **外部事实实测**（2026-10-27，`gh` 查询 `xhqing/XPilot`）：PR #10 `MERGED`（2026-10-27T05:30:17Z，merge commit `75b57ea`）；Issue #9 `CLOSED`；Release `v0.7.1` 非预发布（publishedAt 2026-10-27T05:32:52Z，assets `xpilot-0.7.1-py3-none-any.whl` 63,896 B + `xpilot-0.7.1.tar.gz` 99,540 B）；本地 `~/Developer/XPilot` main 含 `tests/test_version.py`、`python3 -m pytest -q` → 263 passed；worktree `~/Developer/XPilot-version-fix` 已不存在、远端分支已删。
+
 ### 新增（T23：为 XPilot Issue #9 出测试，16 条先红）
 
 - **为什么改**：0.7.0 发布后 `xpilot --version` 仍报 0.6.4——`xpilot/__init__.py` 硬编码的 `__version__` 没跟着 bump 走（wheel 元数据是 0.7.0、源码常量是 0.6.4）；`cli.py` 的 `version_option` 与 `updater.py` 的「当前版本」都读它，导致 `--version` 报假版本、`--update` 每次重复下载安装同一个 wheel。Atlas 已开 Issue #9，按 dev-workflow 测试先行。

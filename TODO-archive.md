@@ -198,6 +198,37 @@
   **进展补充 2**（2026-10-27 12:2x）：Atlas 采用方案 B 修复（判据改为「文件里有没有 `auto_recover` 块」；新增 `DEFAULT_SUBSCRIPTION` / `DEFAULT_AUTO_RECOVER` 两个单一来源常量与 `_is_legacy_subscription_block` 严格类型判定），据此再补 5 条断言（`tests/test_config.py::TestSubscriptionFlagMigration`）：迁移只发生一次（迁后手动关闭再启动保持 false）、已有 `auto_recover` 块时即使 subscription 逐字等于旧默认值也不动、升级后 `auto_recover == Config.DEFAULT_AUTO_RECOVER`、严格类型不误判参数化 2 条（`0` 与 `False`、`3600.0` 与 `3600` 用 `json.dumps` 逐字比对）。自跑 **247 passed**、`tests/test_config.py` 单文件 30 passed、ruff 通过、diff 纯新增 134 行；3 组变异（去掉已迁移判据、严格类型退化为 `==`、迁移不补 `auto_recover` 块）全部被抓住。未发现新的契约不符点，已回信 Atlas。
   **完成说明**（2026-10-27 12:26）：全链闭环。PR #7（`70a381d`，squash）合并进 main，`fixes #5` / `fixes #6` 生效、两个 Issue 均 CLOSED；测试与实现同一次提交 `73f9e0c`（12 个文件），**87 条新测试**进 main、全量 247 passed（用例分布：首批 70 条 = legacy_cleanup 19 + auto_recover 26 + subscription_sync 25；按实现决定补 12 条 = `tests/test_config.py` 迁移 8 + auto_recover 4；方案 B 回归锁 5 条 → `test_config.py` 迁移类共 13 条）。自动发版链跑完：bump 0.7.0（PR #8，`c5e03ce`）→ tag `v0.7.0` → Release https://github.com/xhqing/XPilot/releases/tag/v0.7.0 （assets `xpilot-0.7.0-py3-none-any.whl` + `xpilot-0.7.0.tar.gz`，由项目自带 tag-trigger workflow 构建上传，notes 用 CHANGELOG 英译版）。worktree `~/Developer/XPilot-subscription-sync` 已移除，本地 / 远端分支均已删除，~/.pi/agent 侧核对：XPilot 主仓 main 含三个测试文件、247 passed。过程中发现 1 个判据层面真缺陷（迁移会把用户主动关闭的 `subscription.auto_update` 每次启动迁回 `true`），已报 Atlas 并采用方案 B（按「有无 `auto_recover` 块」判新旧）修复 + 5 条回归锁。
 
+- [ ] **T23** 为 XPilot（Atlas 项目）Issue #9 出测试（先红：`--version` 报陈旧版本，`__version__` 硬编码在 `xpilot/__init__.py`），写入 worktree `~/Developer/XPilot-version-fix`（记录：2026-10-27 13:26）✅**已完成**（完成：2026-10-27 13:32）
+  **背景**：用户 2026-10-27 实测报缺陷——0.7.0 发布后跑 `xpilot --update`，终端明确打印 `Successfully installed xpilot-0.7.0`、`pip show xpilot` 也报 `Version: 0.7.0`，但紧接着 `xpilot --version` 仍报 `xpilot, version 0.6.4`。
+  根因（Atlas 已定位）：`xpilot/__init__.py:3` 硬编码 `__version__ = '0.6.4'`，`cli.py:165` 的 `click.version_option(version=__version__)` 与 `updater.py:70` 的「当前版本」均读它；本次 0.7.0 的 bump 改了 `VERSION` / `pyproject.toml` / `setup.py` / README 徽章 / CHANGELOG，**漏了这一处**，于是 wheel 的打包元数据是 0.7.0、源码常量却是 0.6.4。影响两件事：① `--version` 报假版本，用户无法判断升级是否成功；② 更严重——`updater.py` 拿 `__version__` 当基准比最新 Release，于是**每次 `--update` 都认为 0.6.4 < 0.7.0、重复下载并重装同一个 wheel**。
+  **要做什么**（worktree `~/Developer/XPilot-version-fix` / 分支 `fix/version-from-metadata`，从最新 main `c5e03ce` 开出，测试文件写入带 `# TEST_CASES_WRITE_OK`）：① 读 Issue #9（https://github.com/xhqing/XPilot/issues/9）；② 在项目正式测试位置 `tests/` 写测试（建议新建 `tests/test_version.py`，既有 247 条必须保持绿）；③ 自跑确认红（新函数尚不存在 → `ImportError` / `AttributeError`）；④ 测试命令 `python3 -m pytest -q`（**无 `python` 别名**）、静态检查 `ruff check xpilot tests --select E9,F63,F7,F82`；⑤ 交付自检全过后报告测试文件清单 / 测试命令 / 自跑见红证据——**测试产物留在工作区不提交**。
+
+  **约定接口（开发侧已定稿，测试按此断言）**：`xpilot/__init__.py` 改为**不再硬编码版本字面量**，新增可注入的解析函数：
+  ```python
+  def _resolve_version(distribution_version=None, version_file=None) -> str: ...
+  __version__ = _resolve_version()
+  ```
+  行为约定（按优先级依次尝试）：
+  1. **已安装场景**：调 `importlib.metadata.version('xpilot')`（或注入的 `distribution_version` 可调用对象）拿到版本号 → 返回它。真实环境中它就是 `pyproject.toml` / `setup.py` 里的 `version`（已由 `/bump` 覆盖）。
+  2. **打包元数据不存在**（`importlib.metadata.PackageNotFoundError`，即源码直跑未安装）→ 读仓库根的 `VERSION` 文件（路径可由 `version_file` 注入；默认为“本文件上一级目录的 `VERSION`”，即 `<repo>/VERSION`），返回其**去空白后的内容**。
+  3. **两条都不可用**（`VERSION` 文件缺失 / 不可读 / 内容为空）→ 返回字符串 `'unknown'`，**不抛异常**（导入 `xpilot` 包不能因为版本号解析失败而崩）。
+  - `__version__` 在模块导入时由 `_resolve_version()` 计算得到；`distribution_version` 与 `version_file` 两个参数都是**仅测试用的注入点**，生产路径不传。
+  - **不得残留任何形如 `'0.6.4'` / `'0.7.0'` 的硬编码版本字面量**（测试应断言这一点：读 `xpilot/__init__.py` 源码，正则扫 `__version__\s*=\s*['\"]\d` 无命中）。
+
+  **要覆盖的用例（建议分组）**：
+  - **已安装路径**：注入 `distribution_version=lambda: '0.7.0'` → 返回 `'0.7.0'`；确保此时**不读** `VERSION` 文件（可注入一个不存在的 `version_file`，验证仍返回 metadata 值——优先级正确）。
+  - **源码直跑路径**：注入 `distribution_version` 抛 `PackageNotFoundError` + 一个 `tmp_path` 里写好 `0.7.0\n` 的 `VERSION` 文件 → 返回 `'0.7.0'`（去换行）。
+  - **两者都不可用**：抛 `PackageNotFoundError` + `VERSION` 不存在 → 返回 `'unknown'`、不抛；`VERSION` 内容为空 / 只有空白 → 同样 `'unknown'`。
+  - **无硬编码字面量**：读 `xpilot/__init__.py` 源码断言无版本字面量赋值。
+  - **真实环境一致性（可选，但推荐）**：断言 `xpilot.__version__` 与仓库根 `VERSION` 文件内容一致，或（已安装时）与 `importlib.metadata.version('xpilot')` 一致——本条若在 CI 与本地行为不同（CI 里 `pip install -e .` 装了包）就按“任一路径成立”写宽断言，避免环境依赖导致 CI 红。
+
+  **不要做的事**：① 不改 `cli.py` 的 `click.version_option` 用法与 `updater.py` 的 `get_current_version()` 返回类型（都是读 `xpilot.__version__`，新实现自然生效）；② 不改 `pyproject.toml` / `setup.py` 的版本字段（它们已是 0.7.0，本次不动）；③ 不 bump 版本号（发版归 bump / release）；④ 不在 `__init__.py` 里引入对小工具来说过重的依赖（只用标准库 `importlib.metadata` / `os` / `logging`）。
+
+  **关联**：Issue #9（`xhqing/XPilot`，OPEN）；worktree `~/Developer/XPilot-version-fix` / 分支 `fix/version-from-metadata`；本项目 T22（上一轮 XPilot 出题，已归档）的后续。测试就位后 Atlas 实现到绿 → 本地全量绿 → 用户 `/add` + `/commit` → PR（`fixes #9`）→ CI 绿 auto-merge → 自动发 0.7.1 补丁版；全流程完成后本条归档。
+
+  **进展**（2026-10-27 13:3x）：出题完成并自跑见红，测试产物留在 worktree 未提交。新增 `tests/test_version.py` 共 16 条（6 组）：安装态优先取元数据（2）、源码直跑读仓库 VERSION 去空白（4，含默认路径）、两条都不可用降级 `unknown` 且不抛（5，含空内容 / 纯空白 / 路径为目录）、无硬编码字面量 + `__version__ = _resolve_version()` 存在（2）、真实环境一致性宽断言（3：模块版本、`xpilot --version` CLI 输出、`updater.get_current_version()`，后两条直接覆盖 Issue #9 的两个用户可见影响）。自跑见红：`--continue-on-collection-errors` → 247 passed / 1 error（`ImportError: cannot import name '_resolve_version'`）；既有 247 条单独跑全绿；ruff 通过。防永真断言：`tmp/t23/sandbox/` 参考实现后 263 passed；5 组变异（不去空白、空串不降级、读取失败抛错、优先级写反、硬编码回归）全部被抓。Atlas 实现已落地（`_resolve_version` 与契约逐行一致），全量 **263 passed**（247 + 16）、`import xpilot` 得 `0.7.0`、ruff 通过；已回信确认无差异，待其与实现同提交 + PR（`fixes #9`）→ 0.7.1 发版后归档。
+  **完成说明**（2026-10-27 13:32）：全链闭环。PR #10（`75b57ea`，squash）合并进 main，`fixes #9` 生效、Issue #9 已 CLOSED；测试与实现同一次提交 `4fae751`（3 个文件：`xpilot/__init__.py` + `tests/test_version.py` 16 条 + CHANGELOG，193 insertions / 1 deletion），全量 263 passed。真机验证（隔离 venv 装 Release 产物）：`pip` metadata = 0.7.1、`xpilot --version` = `xpilot, version 0.7.1`、`xpilot.__version__` = 0.7.1——`TestRealEnvironmentConsistency` 的两条用户可见断言在真实安装形态下成立。自动发版链：bump 0.7.1（PR #11，`592bd42`）→ tag `v0.7.1` → Release https://github.com/xhqing/XPilot/releases/tag/v0.7.1 （assets `xpilot-0.7.1-py3-none-any.whl` 63,896 B + `xpilot-0.7.1.tar.gz` 99,540 B，notes 用 CHANGELOG 英译版）。worktree `~/Developer/XPilot-version-fix` 已移除，本地 / 远端分支均已删除；本地 `~/Developer/XPilot` main 实测 263 passed、含 `tests/test_version.py`。回归锁要点：源码正则扫硬编码（载体遗漏类 bug 的通用手法）+ 5 组变异含「VERSION 优先于元数据」锁死三级回退顺序。
+
 ## 🟡 黄色紧急度
 
 - [ ] **T18** 为 pi-harness（Atlas 项目）Issue #9 出测试（先红：API Key 接入的套餐类 provider 底栏仍按官方按量价显示、缺 `(sub)` 标记），写入 worktree `~/Developer/pi-subscription`（记录：2026-10-23 10:58）✅**已完成**（完成：2026-10-23 15:22）
