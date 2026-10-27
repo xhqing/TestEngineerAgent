@@ -101,6 +101,8 @@
 
   **进展补充**（2026-10-27 12:2x）：Atlas 实现已落地、全量 230 条绿；按其实现决定补了 4 组断言（共 12 条）——`tests/test_config.py` 新增 `TestSubscriptionFlagMigration` 8 条（旧默认值常量、全等则迁移、三种全等以外不动、块缺失不动、无文件不创建、JSON 损坏不覆盖）、`tests/test_auto_recover.py` 新增 4 条（重启失败返回 False 且占配额、连续失败到上限后不再调用 restart、`dead_restart_ticks<=0` 不积累 `_dead_ticks` 参数化 2 条）、`tests/test_subscription_sync.py` 将缺块默认值断言由「bool 类型」收紧为 `is True`。自跑 **242 passed**、ruff 通过、`test_config.py` 的 diff 为纯新增 81 行（既有用例零改动）；5 组变异（迁移不执行、迁移判据写反、失败不占配额、禁用仍累加、缺块默认改回 false）全部被抓住。**发现一个判据层面的遗留问题已报 Atlas**：新默认间隔也是 3600，用户把 `auto_update` 改为 `false` 而间隔保持 3600 时，得到的块恰好等于旧默认值，下次任何 `xpilot` 命令都会再迁回 `true`（退出只能靠同时改间隔）；建议改用一次性迁移标记或「无 `auto_recover` 块才迁移」的判据，等 Atlas 定方案后补断言。
 
+  **进展补充 2**（2026-10-27 12:2x）：Atlas 采用方案 B 修复（判据改为「文件里有没有 `auto_recover` 块」；新增 `DEFAULT_SUBSCRIPTION` / `DEFAULT_AUTO_RECOVER` 两个单一来源常量与 `_is_legacy_subscription_block` 严格类型判定），据此再补 5 条断言（`tests/test_config.py::TestSubscriptionFlagMigration`）：迁移只发生一次（迁后手动关闭再启动保持 false）、已有 `auto_recover` 块时即使 subscription 逐字等于旧默认值也不动、升级后 `auto_recover == Config.DEFAULT_AUTO_RECOVER`、严格类型不误判参数化 2 条（`0` 与 `False`、`3600.0` 与 `3600` 用 `json.dumps` 逐字比对）。自跑 **247 passed**、`tests/test_config.py` 单文件 30 passed、ruff 通过、diff 纯新增 134 行；3 组变异（去掉已迁移判据、严格类型退化为 `==`、迁移不补 `auto_recover` 块）全部被抓住。未发现新的契约不符点，已回信 Atlas。
+
 
 ## 🟡 黄色紧急度
 

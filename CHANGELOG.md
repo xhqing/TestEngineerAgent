@@ -23,6 +23,12 @@
 - **验证**（2026-10-27）：`python3 -m pytest -q` → **242 passed**；`ruff check xpilot tests --select E9,F63,F7,F82` 通过；`git diff --stat tests/test_config.py` = 81 insertions / 0 deletions（既有用例零改动）；5 组变异（迁移不执行、迁移判据写反、失败不占配额、禁用仍累加、缺块默认改回 false）逐一被抓住。
 - **发现的问题（已报 Atlas，未加断言）**：新默认 `update_interval` 也是 3600，用户想关掉定时同步只改 `auto_update: false`（间隔保持 3600）时，得到的块恰好等于旧默认值 → 任何一次 `Config()` 实例化都会再迁回 `true`，即「用户关不掉」。建议改一次性迁移标记或「无 `auto_recover` 块才迁移」的判据；另记一个边角：Python 比较中 `0 == False`、`3600.0 == 3600`，故 `auto_update: 0` / 浮点间隔也会被判全等。待 Atlas 定方案后补断言。
 
+### 变更（T22 第三批断言：方案 B 迁移的 5 条回归锁）
+
+- **为什么改**：Atlas 采纳了我报的方案 B（用「文件里有没有 `auto_recover` 块」区分新旧配置），修正了「迁移反复覆盖用户主动关闭」的真缺陷；契约新增 `DEFAULT_SUBSCRIPTION` / `DEFAULT_AUTO_RECOVER` 单一来源常量与 `_is_legacy_subscription_block` 严格类型判定，要求补 4 组断言。
+- **改了什么**（2026-10-27 12:2x，worktree `~/Developer/XPilot-subscription-sync`）：`tests/test_config.py::TestSubscriptionFlagMigration` 追加 5 条——迁移只发生一次（迁后手动关闭再启动保持 `false`）、已有 `auto_recover` 块时即使 subscription 逐字等于旧默认值也不动、升级后 `auto_recover == Config.DEFAULT_AUTO_RECOVER`、严格类型不误判参数化 2 条（`auto_update: 0` 与 `update_interval: 3600.0`，用 `json.dumps(sort_keys=True)` 逐字比对才能区分 `0`/`false` 与 `3600.0`/`3600`）。`TODO.md` T22 补记进展。
+- **验证**（2026-10-27）：`python3 -m pytest -q` → **247 passed**；`tests/test_config.py` 单文件 30 passed；`ruff check xpilot tests --select E9,F63,F7,F82` 通过；`git diff --stat tests/test_config.py` = 134 insertions / 0 deletions（既有 6 条迁移用例零改动）；3 组变异（去掉「已迁移」判据、严格类型退化为 `==` 比较、迁移不补 `auto_recover` 块）全部被对应用例抓住。未发现新的契约不符点。
+
 ### 变更（T21 归档：XPilot Issue #1 全链闭环）
 
 - **为什么改**：Atlas 通知 T21 已全流程闭环（完成时间 2026-10-26 18:08）——PR #3 合并、Issue #1 关闭、0.6.4 已发版并真机验证；按 TODO 纪律把已完成条目从 `TODO.md` 移入 `TODO-archive.md` 闭环。
