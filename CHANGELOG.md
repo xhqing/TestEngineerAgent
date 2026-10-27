@@ -4,6 +4,18 @@
 
 ## [未发布]
 
+### 新增（T22：XPilot Issue #5 + #6 先行测试出题）
+
+- **为什么改**：用户 2026-10-27 要求把 XPilot 的 Issue #5（陈旧运行实例自动恢复 + 清理遗留 `/tmp` 状态文件）与 Issue #6（`subscription.auto_update` / `update_interval` 死配置，已定方案 A：真正实现定时同步）合并成一轮解决。两处都触碰核心运行行为（monitor 自动重启代理、`start` / `stop` 删文件、新增定时子系统），按 dev-workflow 必须测试先行。
+- **改了什么**（2026-10-27 12:11）：`TODO.md` 橙色节末尾新增 T22——背景写清两个 Issue 的缺口与 2026-10 事故场景，并给出**已定稿的完整接口契约**（新模块 `xpilot/legacy_cleanup.py` 的 `find_legacy_paths` / `cleanup_legacy_state` 及其 `tmp_dir` / `pid_alive` / `log` 三个注入点与 `log(level, message)` 签名；`ProxyManager.cleanup_legacy_state` 及 `start` / `stop` 接入点；`AutoSwitch` 的 `subscription` / `auto_recover` 配置块与七个实例属性；`_refresh_all_subscriptions` / `_subscription_sync_tick` / `_recover_restart` / `_check_stale_runtime` / `_track_dead_nodes` 五个方法的逐条语义；`_check_and_switch` / `_monitor_loop` 接入点；以及五条「不要做的事」）。worktree `~/Developer/XPilot-subscription-sync` / 分支 `feat/subscription-sync-and-recovery`（从 main `9ae2d8d` 开出）。
+- **待验证**：测试 Agent 出测试并自跑见红后报告，交 Atlas 实现到绿。
+
+### 新增（T22 交付：XPilot Issue #5 + #6 先行测试 70 条，46 红 + 1 采集错）
+
+- **为什么改**：按 T22 契约出题。Issue #5 要求「发现陈旧就自动处理」（运行实例配置与默认节点不一致时自动重启一次并记原因、限次防死循环；清理 0.6.3 及更早遗留在 `/tmp` 的状态文件），Issue #6 选择方案 A（真正实现 `subscription.auto_update` / `update_interval` 定时同步）。三条链路全碰核心运行行为（monitor 自动重启代理、`start` / `stop` 删文件、新增定时子系统），无测试兜底就改等于裸奔。
+- **改了什么**（2026-10-27 12:16，worktree `~/Developer/XPilot-subscription-sync`，三个测试文件走 `# TEST_CASES_WRITE_OK` 标记通道写入 `tests/`）：新增 `tests/test_legacy_cleanup.py`（19 条：名单常量、`find_legacy_paths` 排序/空集/无关文件忽略/glob 展开、删除返回值与幂等、活 PID 跳过并警告、非法/空 PID 内容照删、默认 `os.kill` 语义（活进程保留、死 PID 删除）、单个删除失败记警告且不断链、默认 log 转发模块 logger；以及 `ProxyManager.cleanup_legacy_state` 委托与 `start`（探测运行状态之前）/ `stop`（返回前）/ `restart`（stop+start 两次）接入）、`tests/test_auto_recover.py`（26 条：`auto_recover` 配置读取与缺块默认值、仅自动恢复启用时也能拉起 monitor、`_recover_restart` 的禁用/代理未运行/限次告警（含「上限」与原因）/窗口外时间戳裁剪/最小间隔防抖/重启异常不向上抛、`_check_stale_runtime` 三态（只处理明确 `False`，`None` 与 `True` 不动手）、`_track_dead_nodes` 的可用即归零/未到阈值不重启/到阈值先归零再重启/阈值 ≤0 禁用、`_monitor_loop` 每 tick 接线与关闭时不调用）、`tests/test_subscription_sync.py`（25 条：`subscription` 配置读取、非法间隔（0 / 负数 / 字符串 / `None`）回退 3600、`_last_sub_sync` 起点、tick 不超过 30s 且取已启用间隔最小值、仅订阅子系统启用也拉起 monitor、全部禁用不启动、`_refresh_all_subscriptions` 逐源调用（`update_existing=True` + `source`）与单源异常隔离、无源返 0、`_subscription_sync_tick` 的禁用/未到间隔/到期刷新/空结果也推进时间戳/先推进后刷新、`_check_and_switch` 在刷新失败、重测仍全挂、刷新恢复 1 个、正常可用 2 个四种情况下喂给 `_track_dead_nodes` 的计数）。`TODO.md` T22 补记进展。
+- **验证**（2026-10-27）：`python3 -m pytest -q --continue-on-collection-errors` → 46 failed / 165 passed / 1 collection error；其中 `tests/test_legacy_cleanup.py` 整模块 `ImportError`（`xpilot.legacy_cleanup` 尚不存在），另两个文件为 `AttributeError`（新属性 / 新方法不存在）；既有 160 条单独跑全绿（`--ignore` 三个新文件 → 160 passed）；5 条新用例在当前代码下就绿，均为「旧行为本来就成立」的负向守卫（关闭的子系统不调用、tick 本来就 ≤30s、全禁用不启动）。断言有效性双重验证：`tmp/t22/sandbox/` 按契约写参考实现后 **230/230 全绿**（证明未过约束），再做 12 组变异（start 不清理、PID 存活照删、删除失败上抛、`None` 当陈旧、去掉防抖、去掉窗口上限、先重启后归零、失败也推进时间戳、刷新后才推进时间戳、间隔不生效、tick 不封顶、可用轮次不喂 `_track_dead_nodes`）逐一被对应用例抓住。`ruff check xpilot tests --select E9,F63,F7,F82` 通过。测试产物以未提交工作区改动留在 worktree（不 `git add`、不 commit、不 push、不开 PR）。
+
 ### 变更（T21 归档：XPilot Issue #1 全链闭环）
 
 - **为什么改**：Atlas 通知 T21 已全流程闭环（完成时间 2026-10-26 18:08）——PR #3 合并、Issue #1 关闭、0.6.4 已发版并真机验证；按 TODO 纪律把已完成条目从 `TODO.md` 移入 `TODO-archive.md` 闭环。
