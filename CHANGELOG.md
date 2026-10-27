@@ -4,6 +4,12 @@
 
 ## [未发布]
 
+### 变更（T22 归档：XPilot Issue #5 + #6 全链闭环）
+
+- **为什么改**：Atlas 通知 T22 已全链完成（测试与实现同 PR 合并、两个 Issue 关闭、0.7.0 已发版），按 TODO 纪律把已完成条目从 `TODO.md` 移入 `TODO-archive.md` 闭环，并实测核对远端事实。
+- **改了什么**（2026-10-27 12:2x）：`TODO.md` 移除 T22 整条（橙色节仍保留 T1 / T5 / T7 / T8，故保留 `## 🟠 橙色紧急度` 标题）；`TODO-archive.md` 橙色节末尾新增该条，正文一字不动、标题行追加 `✅**已完成**（完成：2026-10-27 12:26）`，并补 `**完成说明**`：PR #7（`70a381d`，squash）合并、`fixes #5` / `fixes #6` 生效、两 Issue CLOSED；测试与实现同一次提交 `73f9e0c`（12 个文件），87 条新测试进 main、全量 247 passed（70 首批 + 12 按实现决定补 + 5 方案 B 回归锁，`test_config.py` 迁移类共 13 条）；自动发版链 bump 0.7.0（PR #8，`c5e03ce`）→ tag `v0.7.0` → Release 含 `xpilot-0.7.0-py3-none-any.whl` + `.tar.gz`；worktree 与本地 / 远端分支已清理；回顾了「迁移覆盖用户主动关闭」这一判据缺陷与方案 B 修复。
+- **外部事实实测**（2026-10-27，`gh` 查询 `xhqing/XPilot`）：PR #7 `MERGED`（2026-10-27T04:24:11Z，merge commit `70a381d`）；Issue #5 / #6 均 `CLOSED`；Release `v0.7.0` 非预发布（publishedAt 2026-10-27T04:27:07Z，assets `xpilot-0.7.0-py3-none-any.whl` 62,869 B + `xpilot-0.7.0.tar.gz` 96,880 B）；本地 `~/Developer/XPilot` main 含三个新测试文件，`python3 -m pytest -q` → 247 passed；worktree `~/Developer/XPilot-subscription-sync` 已不存在。
+
 ### 新增（T22：XPilot Issue #5 + #6 先行测试出题）
 
 - **为什么改**：用户 2026-10-27 要求把 XPilot 的 Issue #5（陈旧运行实例自动恢复 + 清理遗留 `/tmp` 状态文件）与 Issue #6（`subscription.auto_update` / `update_interval` 死配置，已定方案 A：真正实现定时同步）合并成一轮解决。两处都触碰核心运行行为（monitor 自动重启代理、`start` / `stop` 删文件、新增定时子系统），按 dev-workflow 必须测试先行。

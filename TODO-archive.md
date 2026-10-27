@@ -124,6 +124,80 @@
   **进展**（2026-10-23 12:38）：已完成，实际改了 **12 个测试文件**（9 个 tsgo 点名 + 3 个 tsgo 看不见的运行时断言漂移）。① 9 个 tsgo 文件按条目逐处改准：`baseten-models.test.ts`（Kimi-K3 + openai 式 thinking map 重写）、`image-tool-result.test.ts`（Baseten Kimi-K3）、`github-copilot-anthropic.test.ts`（claude-opus-4.8）、`openai-responses-compat.test.ts` / `openai-responses-tool-result-images.test.ts` / `stream.test.ts`（copilot gpt-5.4-nano）、`tool-call-id-normalization.test.ts`（copilot + openrouter 两侧 gpt-5.4-nano）、`openai-completions-tool-choice.test.ts`（deepseek-r1-0528）、`together-models.test.ts`（MiniMax-M3 + thinking map）。② 跑全量 `packages/ai` 时又发现 3 个纯运行时漂移（型检抓不到）：`providers.test.ts`（moonshotai-cn 的 Kimi K3 价已单列 2.9879/14.9395/0.2988/2.9879）、`supports-xhigh.test.ts`（kimi-coding K3 新增 off→none）、`xai-responses.test.ts`（grok-4.5 / grok-4.3 新增 xhigh）——按当前目录数据同步改写（登记任务扩围，非放宽断言），并在 pi-harness 两份 CHANGELOG 条目补记了运行时断言这一句。③ 证据：`npx tsgo --noEmit` → 0 错误；9 个受影响文件（CI 等价环境、无 key）→ exit 0（5 passed / 4 skipped，93 passed / 282 skipped）；`packages/ai` 全量（无 key）→ 122 passed / 26 skipped，1066 passed 0 failed；全仓 `npm test`（无 key）除 coding-agent 两例外全部绿（见下）。④ 新发现两个 coding-agent 阻塞项，超出测试侧可修范围、已在上报中列给 Atlas：`model-resolver.test.ts` 的 `built-in defaults exist` 红——`src/core/model-resolver.ts` 的 `defaultModelPerProvider["github-copilot"] = "gpt-5.4"` 已被上游下线（当前目录有 `gpt-6.1-sol`，上游 pi 的默认值已改为它），**需开发侧改一行源码默认值**；`experimental-remote-runtime.test.ts` 单跑 26/26 绿、全量跑偶发缺 `run_end` 事件（flake，非漂移）。测试产物（12 个测试文件）以未提交工作区改动留在 worktree（不 add / 不 commit / 不 push / 不开 PR）。
   **完成说明**（2026-10-23）：12 个 `packages/ai` 测试文件按最新上游目录改准（9 个类型类 + 3 个运行时漂移），随 PR #36 合并进 main，解除三条 PR 的 CI 阻塞。
 
+- [ ] **T22** 为 XPilot（Atlas 项目）Issue #5 + #6 出测试（先红：陈旧实例自动恢复 + 遗留 /tmp 清理 + 定时订阅同步），写入 worktree `~/Developer/XPilot-subscription-sync`（记录：2026-10-27 12:11）✅**已完成**（完成：2026-10-27 12:26）
+  **背景**：XPilot 0.6.4（PR #3，2026-10-26）修掉了「静默断网」的**报告**侧——运行状态迁出 `/tmp`、`status` 用 PID + 端口 + 进程名交叉校验、`start` 幂等、配置陈旧时黄字提示 `xpilot restart`。但「发现之后自动处理」仍是空的，Issue #5 与 #6 就是这两块缺口，用户 2026-10-27 要求合并成一轮解决：
+  - **Issue #5**（https://github.com/xhqing/XPilot/issues/5，OPEN）：① 运行实例的配置与当前默认节点不一致时，`status` 只提示、无人动手重启——2026-10 事故正是节点 IP 漂移、跑着的 xray 咬内存里的旧地址、代理「在线」却全部境外连接超时；要求 monitor 自动重启一次并记原因，且**不能重启死循环**（重启修不好的情况有上限后退回只告警）。② 0.6.3 及更早版本遗留在 `/tmp` 的 `xpilot.pid` / `xpilot-xray.json` / `xpilot-xray-*.log` / `xpilot-auto-switch.pid` 新代码不读、是惰性的，但事后排查事故时极具误导性；要求 `start` / `stop` 时确认无对应进程存活后清掉并记日志。
+  - **Issue #6**（https://github.com/xhqing/XPilot/issues/6，OPEN）：`settings.json` 里 `subscription.auto_update` / `subscription.update_interval` 是**死配置**——`config.py` 生成默认值、两版 README 都列着，但全仓库无人读取（唯一真正生效的是 `auto_switch.auto_update_subscription`，语义是「全节点挂掉时的应急刷新」，不是定时同步）。用户已选**方案 A（实现它）**：monitor 按 `update_interval` 定时拉订阅，与 Issue #5 的自动重启配套（拉下来不生效等于白拉）。
+
+  **要做什么**（worktree `~/Developer/XPilot-subscription-sync` / 分支 `feat/subscription-sync-and-recovery`，从最新 main `9ae2d8d` 开出，测试文件写入带 `# TEST_CASES_WRITE_OK`）：① 读 Issue #5 / #6 正文；② 按下面**已定稿的接口契约**在项目正式测试位置 `tests/` 出测试（建议新建 `tests/test_legacy_cleanup.py` / `tests/test_auto_recover.py` / `tests/test_subscription_sync.py`，也可按判断合并；既有 160 条必须保持绿）；③ 自跑确认红（新函数尚不存在——`AttributeError` / `ModuleNotFoundError` / `ImportError` 即红，断言必红）；④ 测试命令沿用 `python3 -m pytest -q`（项目**没有** `python` 别名，必须 `python3`；静态检查 `ruff check xpilot tests --select E9,F63,F7,F82`）；⑤ 交付自检全过后报告测试文件清单 / 测试命令 / 自跑见红证据——**测试产物留在工作区不提交**（测试与实现同一次提交、同一个 PR，不 `git add` / 不 commit / 不 push / 不开 PR）。
+
+  **约定接口（开发侧已定稿，测试按此断言；实现尚未写入，契约即验收口径）**：
+
+  **（1）新模块 `xpilot/legacy_cleanup.py`**（Issue #5 第 2 条）
+  ```python
+  LEGACY_PID_FILES = ('xpilot.pid', 'xpilot-auto-switch.pid')
+  LEGACY_FILES = ('xpilot-xray.json', 'xpilot.log')
+  LEGACY_LOG_GLOBS = ('xpilot-xray-*.log',)
+
+  def find_legacy_paths(tmp_dir: str = '/tmp') -> list[str]: ...
+  def cleanup_legacy_state(tmp_dir: str = '/tmp', *, pid_alive=None, log=None) -> list[str]: ...
+  ```
+  行为约定：
+  - `find_legacy_paths`：返回 `tmp_dir` 下**实际存在**的遗留文件绝对路径；glob 按 `LEGACY_LOG_GLOBS` 展开；去重；按完整路径字符串升序排序（保证断言稳定）；不存在的不返回（空列表）。
+  - `cleanup_legacy_state`：**返回实际删除的路径列表**（顺序同 `find_legacy_paths`）；从未删除成功的文件不得出现在返回值里。
+  - **PID 文件特殊处理**：读取文件内容为整数 PID；`pid_alive(pid)` 返回真 → **跳过不删**、记一条 warning（内容须含该路径，便于断言）；`pid_alive` 返回假 → 正常删。文件内容不是合法整数 / 为空 / 读取失败 → 视为无活进程，照删。
+  - `pid_alive` 默认实现：`os.kill(pid, 0)`——`ProcessLookupError` → `False`，`PermissionError` → `True`（无权信号说明进程存在），其它 `OSError` → `False`。测试**必须注入** `pid_alive`，不得依赖真实进程。
+  - 删除单个文件抛 `OSError` → 记一条 warning（含路径）、继续处理其余文件、**不向上抛**、不计入返回值。
+  - `log` 默认实现转发到模块 logger，**签名固定为 `log(level: str, message: str)`**（`level` ∈ `{'info', 'warning'}`）；测试注入收集器断言内容。
+  - 幂等：第二次调用返回空列表、不报错。
+  - 全部 `tmp_dir` 可注入是硬要求——测试用 `tmp_path` 造文件，**绝不触碰真 `/tmp`**。
+
+  **（2）`ProxyManager` 新增方法 `cleanup_legacy_state(self) -> list[str]`**（Issue #5 第 2 条接入）
+  - 委托 `xpilot.legacy_cleanup.cleanup_legacy_state(log=...)`，`log` 转发到 `ProxyManager` 模块 logger；返回删除列表。
+  - `start()` **进入后第一步**调用它；`stop()` **返回前**调用它（`restart()` 复用两者，天然覆盖）。
+  - 断言方式建议：monkeypatch `xpilot.proxy_manager.cleanup_legacy_state`（或模块内已导入的符号）为 spy，验证 `start` / `stop` 各调用一次；或直接注入假实现验证调用。
+
+  **（3）`AutoSwitch` 新增状态与配置读取**（`src` 为 `xpilot/auto_switch.py`）
+  `start()` 里从 `settings.json` 读两块配置并存为实例属性（**旧配置缺块时必须用默认值，不能抛错**）：
+  ```python
+  "subscription": {"auto_update": true, "update_interval": 3600},
+  "auto_recover": {"enabled": true, "max_restarts": 3, "restart_window": 1800,
+                    "min_interval": 60, "dead_restart_ticks": 2}
+  ```
+  属性名固定：`_subscription_sync_enabled`（bool）/ `_subscription_sync_interval`（int）/ `_auto_recover_enabled`（bool）/ `_recover_max_restarts`（int）/ `_recover_window`（int）/ `_recover_min_interval`（int）/ `_dead_restart_ticks`（int）。新增计数器：`_last_sub_sync`（float）/ `_recover_times`（`list[float]`，窗口内重启时间戳）/ `_dead_ticks`（int）。
+  - `update_interval` 非法（`<=0` / 非数字）→ 回退 `3600`；`dead_restart_ticks <= 0` → 视为**禁用**全挂重启（`_track_dead_nodes` 恒返回 `False`）。
+  - `start()` 结束时 `self._last_sub_sync = time.time()`（首次定时同步在**一个 interval 之后**，避免每次 `xpilot start` 都拉订阅）。
+  - `_tick_interval`：已启用子系统的间隔最小值再与 `30` 取 min（即 tick **不超过** 30 秒——保证陈旧检查粒度）；四个子系统（watchdog / auto_switch / subscription_sync / auto_recover）**全禁用**时才不启动 monitor。
+
+  **（4）`AutoSwitch` 新增五个方法（签名与语义固定）**
+  ```python
+  def _refresh_all_subscriptions(self) -> int: ...
+  def _subscription_sync_tick(self) -> bool: ...
+  def _recover_restart(self, reason: str) -> bool: ...
+  def _check_stale_runtime(self) -> bool: ...
+  def _track_dead_nodes(self, usable_count: int) -> bool: ...
+  ```
+  - **`_refresh_all_subscriptions()`**：读 `settings.json` 的 `subscriptions`（dict，名称 → URL），逐个调 `self.node_manager.import_from_subscription(url, update_existing=True, source=name)`；累加返回的节点数；单个源抛异常只 `logger.error` 并继续下一个；无订阅源 → 返回 `0`（不抛）。
+  - **`_subscription_sync_tick()`**（Issue #6 定时同步）：`not self._subscription_sync_enabled` → `False`；距 `_last_sub_sync` 不足 `_subscription_sync_interval` → `False`；否则**先更新** `_last_sub_sync = now`（失败也不高频重试）→ 调 `_refresh_all_subscriptions()` → 结果 `>0` 记 info 并返回 `True`，否则返回 `False`。
+  - **`_recover_restart(reason)`**（统一重启执行器）：① `not _auto_recover_enabled` → `False`；② `not self.proxy_manager.is_running()` → `False`（不负责拉起，watchdog 的活）；③ 裁剪 `_recover_times` 到 `restart_window` 内；④ 窗口内次数 `>= _recover_max_restarts` → 记 warning（含「上限」字样与 reason）、返回 `False`（**退回只告警**）；⑤ `_recover_times` 非空且距最后一次不足 `_recover_min_interval` → `False`（防抖）；⑥ 调 `self.proxy_manager.restart()`，异常捕获记 error、**不抛出**；⑦ 追加 `now` 到 `_recover_times`、记 info（含 reason）；⑧ 返回 `True`。
+  - **`_check_stale_runtime()`**（Issue #5 第 1 条）：`not self.proxy_manager.is_running()` → `False`；`matched, detail = self.proxy_manager.running_config_matches_current()`；`matched` 为 `True` 或 `None`（无法判定）→ `False`（**只处理明确的 `False`**）；`False` → `return self._recover_restart(f'运行实例配置陈旧（{detail}）')`。
+  - **`_track_dead_nodes(usable_count)`**（Issue #5 第 1 条的另一触发路径）：`usable_count > 0` → `_dead_ticks = 0` 并返回 `False`；否则 `_dead_ticks += 1`；`_dead_restart_ticks <= 0` 或 `_dead_ticks < _dead_restart_ticks` → `False`；达到阈值 → **先把 `_dead_ticks` 归零**、再 `return self._recover_restart(f'连续 {n} 轮全部节点真实流量不通')`。
+
+  **（5）既有方法的接入点（断言据此）**
+  - `_check_and_switch()`：`if not usable:` 分支里，应急刷新后仍无可用节点时，先 `self._track_dead_nodes(0)` 再 `return`；拿到 `usable` 后、选最优前调一次 `self._track_dead_nodes(len(usable))`（用于归零）。
+  - `_monitor_loop()`：每个 tick 若 `_auto_recover_enabled` 就调 `self._check_stale_runtime()`（**每 tick 都查**，不受其他子系统间隔约束）；每 tick 若 `_subscription_sync_enabled` 就调 `self._subscription_sync_tick()`（间隔由其内部判定）。
+
+  **不要做的事**：① 不改 `running_config_matches_current()` 的既有契约（`True` / `False` / `None` 三态语义与返回的 `(matched, detail)` 元组）；② 不改 `_try_refresh_subscription()` 的既有语义（应急刷新、`auto_update_subscription` 开关、独立 `subscription_refresh_cooldown` 退避）——它**不是**定时同步，两条路径并存互补；③ 不动 `probe_runtime()` / `start()` 幂等 / 多实例拒绝这些 0.6.4 已锁定的行为（既有 44 条 Issue #1 用例必须保持绿）；④ 不真调 `xray` / 系统命令 / 真实网络（`subprocess` / `requests` 全注入假实现）；⑤ 测试不得读写真实 `/tmp` 下的 xpilot 文件。
+
+  **关联**：Issue #5 + Issue #6（`xhqing/XPilot`，均 OPEN，PR 描述将带 `fixes #5` 与 `fixes #6`）；worktree `~/Developer/XPilot-subscription-sync` / 分支 `feat/subscription-sync-and-recovery`（从最新 main `9ae2d8d` 开出，2026-10-27）；本项目 T21（Issue #1 出题，已闭环归档）的后续。测试就位后 Atlas 实现到绿 → 本地全量绿 → 用户 `/add` + `/commit` → PR → CI 绿 auto-merge → 自动发版链；全流程完成后本条归档。
+
+  **进展**（2026-10-27 12:16）：出题完成，已交 Atlas（测试产物留在 worktree 未提交）。新增 3 个测试文件共 70 条用例——`tests/test_legacy_cleanup.py`（19 条：名单常量、`find_legacy_paths` 排序/空集/glob 展开、删除返回值、活 PID 跳过并警告、非法内容照删、默认 `os.kill` 语义、单个删除失败不断链、模块 logger 转发、幂等，以及 `ProxyManager` 委托与 `start`（探测前）/ `stop`（返回前）/ `restart`（两次）接入）、`tests/test_auto_recover.py`（26 条：配置块与缺块默认值、四个子系统的 tick 间隔上限 30s、`_recover_restart` 的禁用/未运行/限次/窗口裁剪/防抖/异常不抛、`_check_stale_runtime` 三态（只处理 `False`）、`_track_dead_nodes` 阈值与先归零、`_monitor_loop` 每 tick 接线）、`tests/test_subscription_sync.py`（25 条：`subscription` 配置与非法间隔回退、`_last_sub_sync` 起点与「先推进后刷新」、仅订阅子系统启用也能拉起 monitor、`_refresh_all_subscriptions` 逐源与单源失败隔离、`_subscription_sync_tick` 间隔/失败不收紧重试、`_check_and_switch` 的全挂与恢复轮次喂给 `_track_dead_nodes`）。自跑见红：`python3 -m pytest -q --continue-on-collection-errors` → 46 failed / 165 passed / 1 collection error（`test_legacy_cleanup.py` 因 `xpilot.legacy_cleanup` 不存在整模块 ImportError；另两个文件红的类型是 `AttributeError: 'AutoSwitch' object has no attribute ...`；绿的是 160 条既有用例 + 5 条「旧行为本来就成立」的负向守卫）；既有 160 条单独跑全绿。防永真断言：`tmp/t22/sandbox/` 按契约写参考实现后 230 条全绿，另做 12 组变异（start 不清理、PID 存活照删、删除失败上抛、`None` 当陈旧、去掉防抖、去掉窗口上限、先重启后归零、失败也推进时间戳、刷新后才推进时间戳、间隔不生效、tick 不封顶、可用轮次不喂 `_track_dead_nodes`）逐一被对应用例抓住。`ruff check xpilot tests --select E9,F63,F7,F82` 通过。待 Atlas 实现到绿 → 同一次提交 + 同一个 PR（`fixes #5` / `fixes #6`）。
+
+  **进展补充**（2026-10-27 12:2x）：Atlas 实现已落地、全量 230 条绿；按其实现决定补了 4 组断言（共 12 条）——`tests/test_config.py` 新增 `TestSubscriptionFlagMigration` 8 条（旧默认值常量、全等则迁移、三种全等以外不动、块缺失不动、无文件不创建、JSON 损坏不覆盖）、`tests/test_auto_recover.py` 新增 4 条（重启失败返回 False 且占配额、连续失败到上限后不再调用 restart、`dead_restart_ticks<=0` 不积累 `_dead_ticks` 参数化 2 条）、`tests/test_subscription_sync.py` 将缺块默认值断言由「bool 类型」收紧为 `is True`。自跑 **242 passed**、ruff 通过、`test_config.py` 的 diff 为纯新增 81 行（既有用例零改动）；5 组变异（迁移不执行、迁移判据写反、失败不占配额、禁用仍累加、缺块默认改回 false）全部被抓住。**发现一个判据层面的遗留问题已报 Atlas**：新默认间隔也是 3600，用户把 `auto_update` 改为 `false` 而间隔保持 3600 时，得到的块恰好等于旧默认值，下次任何 `xpilot` 命令都会再迁回 `true`（退出只能靠同时改间隔）；建议改用一次性迁移标记或「无 `auto_recover` 块才迁移」的判据，等 Atlas 定方案后补断言。
+
+  **进展补充 2**（2026-10-27 12:2x）：Atlas 采用方案 B 修复（判据改为「文件里有没有 `auto_recover` 块」；新增 `DEFAULT_SUBSCRIPTION` / `DEFAULT_AUTO_RECOVER` 两个单一来源常量与 `_is_legacy_subscription_block` 严格类型判定），据此再补 5 条断言（`tests/test_config.py::TestSubscriptionFlagMigration`）：迁移只发生一次（迁后手动关闭再启动保持 false）、已有 `auto_recover` 块时即使 subscription 逐字等于旧默认值也不动、升级后 `auto_recover == Config.DEFAULT_AUTO_RECOVER`、严格类型不误判参数化 2 条（`0` 与 `False`、`3600.0` 与 `3600` 用 `json.dumps` 逐字比对）。自跑 **247 passed**、`tests/test_config.py` 单文件 30 passed、ruff 通过、diff 纯新增 134 行；3 组变异（去掉已迁移判据、严格类型退化为 `==`、迁移不补 `auto_recover` 块）全部被抓住。未发现新的契约不符点，已回信 Atlas。
+  **完成说明**（2026-10-27 12:26）：全链闭环。PR #7（`70a381d`，squash）合并进 main，`fixes #5` / `fixes #6` 生效、两个 Issue 均 CLOSED；测试与实现同一次提交 `73f9e0c`（12 个文件），**87 条新测试**进 main、全量 247 passed（用例分布：首批 70 条 = legacy_cleanup 19 + auto_recover 26 + subscription_sync 25；按实现决定补 12 条 = `tests/test_config.py` 迁移 8 + auto_recover 4；方案 B 回归锁 5 条 → `test_config.py` 迁移类共 13 条）。自动发版链跑完：bump 0.7.0（PR #8，`c5e03ce`）→ tag `v0.7.0` → Release https://github.com/xhqing/XPilot/releases/tag/v0.7.0 （assets `xpilot-0.7.0-py3-none-any.whl` + `xpilot-0.7.0.tar.gz`，由项目自带 tag-trigger workflow 构建上传，notes 用 CHANGELOG 英译版）。worktree `~/Developer/XPilot-subscription-sync` 已移除，本地 / 远端分支均已删除，~/.pi/agent 侧核对：XPilot 主仓 main 含三个测试文件、247 passed。过程中发现 1 个判据层面真缺陷（迁移会把用户主动关闭的 `subscription.auto_update` 每次启动迁回 `true`），已报 Atlas 并采用方案 B（按「有无 `auto_recover` 块」判新旧）修复 + 5 条回归锁。
+
 ## 🟡 黄色紧急度
 
 - [ ] **T18** 为 pi-harness（Atlas 项目）Issue #9 出测试（先红：API Key 接入的套餐类 provider 底栏仍按官方按量价显示、缺 `(sub)` 标记），写入 worktree `~/Developer/pi-subscription`（记录：2026-10-23 10:58）✅**已完成**（完成：2026-10-23 15:22）
