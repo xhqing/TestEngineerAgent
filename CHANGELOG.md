@@ -4,6 +4,18 @@
 
 ## [未发布]
 
+### 新增（T23：为 XPilot Issue #9 出测试，16 条先红）
+
+- **为什么改**：0.7.0 发布后 `xpilot --version` 仍报 0.6.4——`xpilot/__init__.py` 硬编码的 `__version__` 没跟着 bump 走（wheel 元数据是 0.7.0、源码常量是 0.6.4）；`cli.py` 的 `version_option` 与 `updater.py` 的「当前版本」都读它，导致 `--version` 报假版本、`--update` 每次重复下载安装同一个 wheel。Atlas 已开 Issue #9，按 dev-workflow 测试先行。
+- **改了什么**（2026-10-27 13:3x，worktree `~/Developer/XPilot-version-fix` / 分支 `fix/version-from-metadata`，测试文件走 `# TEST_CASES_WRITE_OK` 标记通道）：新增 `tests/test_version.py` 16 条——安装态优先取打包元数据（含「metadata 可用时不读 VERSION 文件」的优先级断言）、源码直跑读仓库根 `VERSION` 去空白（含默认路径不注入）、两条都不可用降级 `'unknown'` 不抛（VERSION 缺失 / 空 / 纯空白 / 路径为目录）、源码扫描无 `__version__ = '<数字>'` 硬编码且必须是 `_resolve_version()` 赋值、真实环境一致性宽断言三条（模块版本、`xpilot --version` CLI 输出、`updater.get_current_version()`，按「仓库 VERSION 或已安装元数据任一路径成立」写，避免 CI 安装形态差异）。`TODO.md` T23 补记进展。
+- **验证**（2026-10-27）：`python3 -m pytest -q --continue-on-collection-errors` → 247 passed / 1 error（`ImportError: cannot import name '_resolve_version'`，实现未落地）；既有 247 条单独跑全绿；`ruff check xpilot tests --select E9,F63,F7,F82` 通过；`tmp/t23/sandbox/` 按契约写参考实现后 263 passed；5 组变异（VERSION 不去空白、空串不降级、读取失败抛错、优先级写反、硬编码回归）全部被对应用例抓住。测试产物留在工作区未提交（测试与实现同一次提交、同一个 PR）。
+
+### 新增（T23：XPilot Issue #9 先行测试出题）
+
+- **为什么改**：用户 2026-10-27 实测报 XPilot 缺陷——0.7.0 发布后 `xpilot --update` 成功装上 0.7.0（`pip show` 也报 0.7.0），但 `xpilot --version` 仍报 0.6.4。根因：`xpilot/__init__.py` 硬编码 `__version__ = '0.6.4'`，本次 bump 漏改这一处；连带 `updater.py` 拿它当基准比较最新 Release，于是**每次 `--update` 都认为有新版本、重复下载并重装同一个 wheel**。修复涉及核心行为（版本解析），按 dev-workflow 必须测试先行。
+- **改了什么**（2026-10-27 13:26）：`TODO.md` 橙色节末尾新增 T23——背景写清现象、根因与两項影响；给出已定稿的接口契约（`_resolve_version(distribution_version=None, version_file=None)` 的三级回退：`importlib.metadata` → 仓库根 `VERSION` 文件 → `'unknown'`，且**不得残留任何硬编码版本字面量**）；列出五组要覆盖的用例与四条「不要做的事」（不改 `cli.py` / `updater.py` 的读取方式、不改 `pyproject.toml` / `setup.py`、不 bump 版本号、不引入重依赖）。worktree `~/Developer/XPilot-version-fix` / 分支 `fix/version-from-metadata`（从 main `c5e03ce` 开出）。
+- **待验证**：测试 Agent 出测试并自跑见红后报告，交 Atlas 实现到绿、发 0.7.1 补丁版。
+
 ### 变更（T22 归档：XPilot Issue #5 + #6 全链闭环）
 
 - **为什么改**：Atlas 通知 T22 已全链完成（测试与实现同 PR 合并、两个 Issue 关闭、0.7.0 已发版），按 TODO 纪律把已完成条目从 `TODO.md` 移入 `TODO-archive.md` 闭环，并实测核对远端事实。
