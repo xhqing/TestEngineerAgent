@@ -57,7 +57,7 @@
 
   **关联**：Issue #9（`xhqing/XPilot`，OPEN）；worktree `~/Developer/XPilot-version-fix` / 分支 `fix/version-from-metadata`；本项目 T22（上一轮 XPilot 出题，已归档）的后续。测试就位后 Atlas 实现到绿 → 本地全量绿 → 用户 `/add` + `/commit` → PR（`fixes #9`）→ CI 绿 auto-merge → 自动发 0.7.1 补丁版；全流程完成后本条归档。
 
-  **进展**（2026-10-27 13:3x）：出题完成并自跑见红，测试产物留在 worktree 未提交。新增 `tests/test_version.py` 共 16 条（6 组）：安装态优先取元数据（2）、源码直跑读仓库 VERSION 去空白（4，含默认路径）、两条都不可用降级 `unknown` 且不抛（5，含空内容 / 纯空白 / 路径为目录）、无硬编码字面量 + `__version__ = _resolve_version()` 存在（2）、真实环境一致性宽断言（3：模块版本、`xpilot --version` CLI 输出、`updater.get_current_version()`，后两条直接覆盖 Issue #9 的两个用户可见影响）。自跑见红：`--continue-on-collection-errors` → 247 passed / 1 error（`ImportError: cannot import name '_resolve_version'`）；既有 247 条单独跑全绿；ruff 通过。防永真断言：`tmp/t23/sandbox/` 参考实现后 263 passed；5 组变异（不去空白、空串不降级、读取失败抛错、优先级写反、硬编码回归）全部被抓。待 Atlas 实现到绿。
+  **进展**（2026-10-27 13:3x）：出题完成并自跑见红，测试产物留在 worktree 未提交。新增 `tests/test_version.py` 共 16 条（6 组）：安装态优先取元数据（2）、源码直跑读仓库 VERSION 去空白（4，含默认路径）、两条都不可用降级 `unknown` 且不抛（5，含空内容 / 纯空白 / 路径为目录）、无硬编码字面量 + `__version__ = _resolve_version()` 存在（2）、真实环境一致性宽断言（3：模块版本、`xpilot --version` CLI 输出、`updater.get_current_version()`，后两条直接覆盖 Issue #9 的两个用户可见影响）。自跑见红：`--continue-on-collection-errors` → 247 passed / 1 error（`ImportError: cannot import name '_resolve_version'`）；既有 247 条单独跑全绿；ruff 通过。防永真断言：`tmp/t23/sandbox/` 参考实现后 263 passed；5 组变异（不去空白、空串不降级、读取失败抛错、优先级写反、硬编码回归）全部被抓。Atlas 实现已落地（`_resolve_version` 与契约逐行一致），全量 **263 passed**（247 + 16）、`import xpilot` 得 `0.7.0`、ruff 通过；已回信确认无差异，待其与实现同提交 + PR（`fixes #9`）→ 0.7.1 发版后归档。
 
 
 ## 🟡 黄色紧急度
