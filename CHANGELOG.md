@@ -4,6 +4,16 @@
 
 ## [未发布]
 
+### 变更（T24 进展：pi-harness 模型目录漂移修复已出题并自跑验证通过）
+
+- **为什么改**：T24 的出题动作已完成（改 pi-harness 测试文件 + 自跑验证），按纪律把进展记回 TODO 与 CHANGELOG。
+- **改了什么**（2026-11-02 16:45）：`TODO.md` 的 T24 补一段 **进展**——唯一改动文件 `packages/ai/test/cache-retention.test.ts`（删 `it.each` 里 `MODELS.opencode["deepseek-v4-flash"]` 一行 + 上方 5 行目录漂移说明注释，断言未动）；实测当前 catalog 带 `supportsLongCacheRetention === false` 的只有 `deepseek-v4-pro` / `kimi-k2.5` / `kimi-k2.6` / `minimax-m2.7`（与列表剩余四项吻合，故只能删不能换）；自跑 `tsgo --noEmit` 退出码 0（无输出）、`npx vitest run packages/ai/test/cache-retention.test.ts` 19 passed / 2 skipped（skip 为既有 `it.skipIf` 缺 key 用例）；改动留工作区未提交，等 Atlas 提交。
+
+### 新增（T24：pi-harness 模型目录漂移修复出题）
+
+- **为什么改**：Atlas 报 pi-harness PR #41 的 CI 红在 `cache-retention.test.ts` 引用了已下架的模型 id `deepseek-v4-flash`，导致 fork 刚开的 required check 把 main 冻结（任何 PR 都红）；定因已确认与本 PR 无关、属模型目录漂移。
+- **改了什么**（2026-11-02 16:41）：`TODO.md` 橙色紧急度节新增 T24（背景 / 要做什么 / 关联三段），指明只删那一行过期模型、断言不动、替换必须确认新模型同样带 `supportsLongCacheRetention: false`，以及自跑验证命令（`tsgo --noEmit` 0 错误 + 该文件 vitest 全绿）。
+
 ### 变更（T23 归档：XPilot Issue #9 全链闭环，0.7.1 已发版）
 
 - **为什么改**：Atlas 通知 T23 全链完成（PR #10 合并、Issue #9 关闭、0.7.1 已发版），按 TODO 纪律把已完成条目移入归档，并实测核对远端事实。
