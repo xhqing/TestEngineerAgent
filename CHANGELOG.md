@@ -4,6 +4,12 @@
 
 ## [未发布]
 
+### 变更（T25 加严：动态派生同时收窄到 openai-completions 传输层）
+
+- **为什么改**：Atlas 复审指出精度问题——`Object.values(MODELS.opencode)` 是拍平的、四个 API 分组混在一起，而这条用例走 `streamOpenAICompletions` 并把模型 `as Model<"openai-completions">`；当前恰好所有带标记的模型都是 completions，但上游一旦给其它 API 的模型也打上该标记，派生列表会塞进非 completions 模型、用错传输层去测，属 Issue #44「不因上游改动而失真」的同一类风险。
+- **改了什么**（2026-11-02 17:40，仍只改 pi-harness 的 `packages/ai/test/cache-retention.test.ts` 一个文件、改动留工作区未提交）：派生条件改为「`api === "openai-completions"` 且 `supportsLongCacheRetention === false`」，工具函数改善为 `isCompletionsModelWithoutLongCacheRetention()`（新增 `CatalogModel` 结构类型），守卫用例提示文案改为「至少有一个 openai-completions 模型带该标记」；断言 / 注释 / 守卫用例结构未动。`TODO.md` 的 T25 补一段 **进展补充** 记录复审结论与复跑证据。
+- **验证**：`tsgo --noEmit` 退出码 0；`npx vitest run packages/ai/test/cache-retention.test.ts` → 20 passed | 2 skipped（仍是那四个 `'opencode'/...` 用例名）；模拟改名仍全绿且用例名跟随；额外给两个 anthropic-messages 模型临时打标记 → 派生仍是四条（未多出两条），证明收窄生效；catalog 两次改动均已原样恢复（shasum `30cd6952…`）。
+
 ### 变更（T25 进展：pi-harness 长缓存保留用例改为从模型目录动态派生，Issue #44）
 
 - **为什么改**：Issue #44 要求治本——测试不再写死模型名，否则上游每次改名都会让 required check `build-check-test` 变红、冻结 main。出题工作已在 worktree 完成并自跑验证，按纪律把进展记回 TODO 与 CHANGELOG。
