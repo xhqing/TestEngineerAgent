@@ -10,6 +10,12 @@
 
 ## [未发布]
 
+### 变更（移除访问量徽章，配合停用集中式流量采集）
+
+- **为什么改**：用户 2026-11-04 决定停用 xhqing 仓库的集中式访问量采集，同时不再在各仓库 README 展示访问量徽章。徽章的数据源必须由采集任务每天刷新，采集停掉之后徽章会冻结在旧值，而徽章文案写的是「Visits/day (14d)」——数字不再更新却仍显示成实时数据，留着反而误导读者。
+- **改了什么**：`README.md` / `README_cn.md` 顶部徽章区删除那一枚 shields.io 访问量徽章（整行删除，数据源 `https://raw.githubusercontent.com/xhqing/xhqing/main/traffic/badges/<仓库名>.json`）；License / Version / Type 等其它徽章与正文一个字未动。
+- **回归检查**：只删这一整行，徽章区所在的 `<p align="center">` / `<div>` 结构与相邻徽章不受影响；README 其余内容零改动。
+
 ### 变更（T27 出题完成：cmux 普通启动 / 新建窗口默认空窗口的测试已追加）
 
 - **为什么改**：cmux Issue #2 的补充需求——用户验收指出「开启 cmux 的默认窗口也应该是空窗口」。实现侧已把 `createInitialWorkspace` 收紧为「无快照且显式带 working directory / 终端输入 / 标题」，并在 `TabManager.init` 的 false 分支置 `hasEmptiedAllWorkspaces = true` 防止启动恢复（#399）补满；测试侧按先红后绿出题。
