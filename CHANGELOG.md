@@ -10,6 +10,12 @@
 
 ## [未发布]
 
+### 变更（T27 出题完成：cmux 普通启动 / 新建窗口默认空窗口的测试已追加）
+
+- **为什么改**：cmux Issue #2 的补充需求——用户验收指出「开启 cmux 的默认窗口也应该是空窗口」。实现侧已把 `createInitialWorkspace` 收紧为「无快照且显式带 working directory / 终端输入 / 标题」，并在 `TabManager.init` 的 false 分支置 `hasEmptiedAllWorkspaces = true` 防止启动恢复（#399）补满；测试侧按先红后绿出题。
+- **改了什么**（2026-11-04 13:19，改动留在 worktree `~/Developer/cmux-empty-launch` 工作区、未提交）：`cmuxTests/EmptyWindowStateTests.swift` 追加 4 条用例——`TabManager(createInitialWorkspace: false)` 空且 `hasEmptiedAllWorkspaces == true`；`createMainWindow()`（无快照无参数）tabs 空；`createMainWindow(initialWorkingDirectory:)` 与 `createMainWindow(initialTerminalInput:)` 各建 1 个初始 workspace（显式用法防回归）；新增窗口清理辅助方法（自动确认关窗 + 等 `MainWindowContext` 注销）。`TODO.md` 的 T27 补进展段。
+- **验证**：`swiftc -parse` 通过；`scripts/lint-pbxproj-test-wiring.sh` ok（1287 个文件）。无红灯 / 绿灯证据（本机与 macmini 均无 Xcode，沿用 T26 定案的静态验证口径）。
+
 ### 变更（T25 加严：动态派生同时收窄到 openai-completions 传输层）
 
 - **为什么改**：Atlas 复审指出精度问题——`Object.values(MODELS.opencode)` 是拍平的、四个 API 分组混在一起，而这条用例走 `streamOpenAICompletions` 并把模型 `as Model<"openai-completions">`；当前恰好所有带标记的模型都是 completions，但上游一旦给其它 API 的模型也打上该标记，派生列表会塞进非 completions 模型、用错传输层去测，属 Issue #44「不因上游改动而失真」的同一类风险。
