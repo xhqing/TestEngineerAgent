@@ -27,6 +27,35 @@
 
 ## 🟠 橙色紧急度
 
+- [ ] **T28** 为 pi-harness Issue #49 出测试（先红）：单个扩展加载失败不得让 `pi` 整体退出（记录：2026-11-05 15:35）✅**已完成**（完成：2026-11-05 16:40）
+  **背景**：pi 加载扩展时「任一扩展文件解析失败 → 打印 `Error: Failed to load extension …: ParserError: …` → `exit(1)`」，一个可选插件写坏就把整个 CLI 变成不可用（2026-11-04 实测：某个本地扩展里一个未转义的反引号让全机每个 `pi` 会话一整天起不来，只能人工修好）。用户定调根治：扩展加载失败降级为警告 + 跳过失败的扩展 + 保留 `-ne` 提示，并给 `--strict-extensions` 恢复旧的硬退出行为。需求端 Issue：https://github.com/xhqing/pi-harness/issues/49
+  **要做什么**（工作目录 `~/Developer/pi-harness-ext-load`，分支 `fix/extension-load-fail-soft`，已从最新 main 开出、`npm ci` 已装好；测试文件写入带 `# TEST_CASES_WRITE_OK`）：
+  ① 先读 Issue #49 正文（现象 / 代码位置 / 建议行为 / 验收标准）与 pi-harness `DEVELOPMENT.md` 的测试规范（`packages/coding-agent/test/suite/` 用 `test/suite/harness.ts` + faux provider；不起真实供应商请求）。
+  ② 在项目正式测试位置（`packages/coding-agent/test/`）写测试。**写入通道注意**：`test-cases-guard` 对 Write / Edit 工具写测试路径是无条件 deny（无标记通道），所以先把测试内容落到 `<worktree>/tmp/` 再 `cp` 过去，或直接用带 `# TEST_CASES_WRITE_OK` 标记的 bash heredoc 写入；跑测试命令不受限。造场景的办法可参考现存测试：`test/extensions-discovery.test.ts` 用 `fs.mkdtempSync` 建临时扩展目录 + `discoverAndLoadExtensions()`；若需要验证「CLI 是否退出」这一层，可参考 `test/package-command-paths.test.ts` / `test/session-id-readonly.test.ts` 里起子进程的写法（把 `PI_CODING_AGENT_DIR` 指到临时目录，用 faux provider / 不发真实请求的方式跑 `pi -p "…"`，断言子进程退出码与 stderr）。**以能真实验证行为为准，不要求照抄某一种造法**。
+  ③ 断言清单（全部是「可观察行为」，不要断言实现细节）：
+     (a) 扩展目录里同时放一个**语法错误**的扩展和一个正常扩展 → 进程**不退出**（退出码 0），正常扩展仍然生效（例如它注册的命令 / 工具可用），输出里点名那个坏文件（含 `Failed to load extension` 与文件路径）；
+     (b) 同一个场景加 `--strict-extensions` → 退出码 1，输出含 `Failed to load extension` 与 `pi -ne` 提示（恢复旧行为）；
+     (c) **防误报**：扩展全部正常时，不出现任何扩展加载相关的 warning / error；
+     (d) 至少一条用例覆盖「坏扩展不会连带其他扩展一起失效」（例如两个正常扩展 + 一个坏扩展，两个正常的都还在）。
+  ④ 自跑见红：当前 main 的实现是硬退出，所以 (a)(d) 必红、(b)(c) 应绿——给出实际命令 + 输出（红的用例名、绿的数量）。若 (b)(c) 也红，先判断是断言写错还是 Issue 与现状不符，不猜、写进报告。
+  ⑤ **不要提交**：不 `git add` / 不 `git commit` / 不 `git push`，改动以未提交的工作区改动形式留在 worktree，报告测试文件清单 + 测试命令 + 见红证据。
+  ⑥ **边界**：只写测试文件，不改 `packages/coding-agent/src/` 下任何实现（实现归 Atlas）；不放宽断言（把 `toBe(0)` 改 `not.toBe(1)`、删断言都算违规）；新测试要能进 CI 全量跑（`./test.sh` 口径）。
+  **进展**（2026-11-05 15:45）：①～④ 已完成，⑤⑥ 遵守——只新增一个测试文件、没动 `packages/coding-agent/src/` 一行实现、没 `git add` / `commit` / `push`。新文件 `packages/coding-agent/test/extension-load-failure.test.ts`（5 条用例）以未提交的工作区改动留在 worktree `~/Developer/pi-harness-ext-load`，等 Atlas 实现到位后同一次提交进 PR。
+  **造法**（全部黑盒观察，不断言实现细节）：起子进程跑 `pi`，`node --import src/experimental/source-resolver.ts src/cli.ts -p "say ok" --model <fixture>/<fixture-model>`，`PI_CODING_AGENT_DIR` 指临时 agent 目录；临时目录里写 `models.json` 注册一个 `openai-completions` 供应商、baseUrl 指向测试进程内的 `127.0.0.1` SSE 假服务（返回 `echo-ok`，`PI_OFFLINE=1`，不发任何真实供应商请求）；`agent/extensions/` 下放健康扩展（工厂执行时往 marker 文件追加自己的名字，作为「确实加载了」的可观察证据）与语法错误扩展（缺右花括号，与 #49 事故同类）。
+  **5 条用例**：(a) 坏 + 好 → 退出码 0、stdout 含 `echo-ok`、stderr 用正则 `Failed to load extension "[^"]*broken\.ts"` 点名坏文件、marker 恰为 `alpha`；(d) 两个好 + 一个坏 → 退出码 0、marker 同时含 `alpha` 与 `beta`（坏扩展没连带打掉兄弟）；(b) 坏 + `--strict-extensions` → 退出码 1、含 `Failed to load extension` / 坏文件路径 / `pi -ne`，且 stderr **不含** `Unknown option`；(b 补充) 全部健康 + `--strict-extensions` → 退出码 0、无 `Unknown option`、无 `Failed to load extension`（严格模式只在出错时变严，不破坏正常运行）；(c) 全健康 → 退出码 0、marker 两个都在、stderr 无任何 `Failed to load extension` 与 `Warning/Error: …extension`。
+  **自跑见红**：`cd packages/coding-agent && node ../../node_modules/vitest/dist/cli.js --run test/extension-load-failure.test.ts` → **Tests 4 failed | 1 passed (5)**、`Duration 5.01s`。红色 4 条具体是：
+  - ❌ (a) `skips a broken extension, keeps running, and still loads the healthy one` —— `expected 1 to be +0`（现在是硬退出，进程死在扩展加载阶段，stdout 空）
+  - ❌ (d) `does not take down other extensions when one is broken` —— `expected 1 to be +0`
+  - ❌ (b) `fails fast with --strict-extensions` —— `expected 'Error: Unknown option: --strict-ext…' not to contain 'Unknown option'`
+  - ❌ (b 补充) `runs normally with --strict-extensions when every extension loads` —— `expected 1 to be +0`（同一行 `Error: Unknown option: --strict-extensions`）
+  - ✅ (c) `reports nothing about extension loading when every extension loads` 绿（当前实现下健康扩展本来就不报警，符合预期）
+  **与 ④ 预期的偏差（如实说明，不是断言写错）**：④ 预计 (b)(c) 应绿，实测 (b) 两条都红。根因是 **`--strict-extensions` 目前根本不是已存在的选项**（`parseArgs` 里没有它，CLI 直接打 `Error: Unknown option: --strict-extensions`）：如果 (b) 只断言「退出码 1 + `Failed to load extension` + `pi -ne`」，今天会**假绿**——因为硬退出行为本身就在，这三条凑巧全满足，实现哪天漏加这个选项、甚至把严格模式做成默认，(b) 都发现不了。所以 (b) 必须带上「该选项被识别（stderr 不含 `Unknown option`）」这一条，「全部健康 + 严格模式 → 退出码 0」是配套的「严格模式不许成为默认」守卫。(c) 与预期一致。
+  **交付自检**：`node_modules/.bin/tsgo --noEmit`（全仓库类型检查）→ 无输出、退出码 **0**；`npm run check:ts-imports` → 退出码 **0**；`biome check --write packages/coding-agent/test/extension-load-failure.test.ts` → 无告警（1 file fixed 后原样通过）；连跑两次结果一致（4 failed | 1 passed），无抖动。
+  **环境备注**：worktree 里 `packages/ai/src/providers/data/`（39 个 JSON，被 .gitignore 忽略、不入库）原本不存在，子进程一启动就 `ERR_MODULE_NOT_FOUND .manifest.json`；已从 `~/Developer/pi-harness/packages/ai/src/providers/data` 复制过来（git 无感知，`git status` 仍只有新测试文件一行）。
+  **剩余**：Atlas 实现（`main.ts` 扩展加载错误降级为 warning + 跳过失败扩展 + 新增 `--strict-extensions`）→ 本地全量绿 → 提交（测试 + 实现同一次提交）→ PR（`fixes #49`）→ CI → 合并 → 发版 → 本条归档。
+  **关联**：Issue #49；worktree `~/Developer/pi-harness-ext-load` / 分支 `fix/extension-load-fail-soft`；上游同族历史 Issue #6222 / #9235 / #10342（全部自动关闭未修）；测试就位后 Atlas 实现 → 本地全量绿 → 提交 → PR（`fixes #49`）→ CI → 合并 → 发版。
+  **完成说明**（2026-11-05 16:40）：全链闭环——Atlas 实现到绿（扩展加载失败降级为警告 + 跳过 + `--strict-extensions` 兜回），五条用例与实现同一次提交进 pi-harness PR #50（`fixes #49`），CI `build-check-test` 绿（5m27s）squash 合并（merge commit `66f2c75b5`），Issue #49 自动关闭（COMPLETED）；本地全量 `./test.sh` 全绿、`npm run check` 干净、TUI 实测坏扩展被跳过且提示可读。随后 bump 到 0.0.8（PR #51 合并）并发版 v0.0.8（tag 已推、Build Binaries workflow 构建六平台产物）。
+
 - [ ] **T6** 为 ghostty-launcher（Atlas 项目）Issue #1 出测试（先红），写入 worktree `~/Developer/ghostty-launcher-new-window-reliability`（记录：2026-09-29 19:33）✅**已完成**（完成：2026-09-29 21:45）
   **背景**：ghostty-launcher 面板的「New Window」按钮偶发无反应（2026-09-29 发生一次、无法按需复现）。排查结论：不是调用失败——系统日志里发生时段扩展没有任何调用记录，是**点击没有变成扩展调用**；且扩展自身零日志（所有失败路径静默吞掉），根因无法定位。另有多处代码审查发现的竞态隐患：列表每 2s 全量重建 DOM（点窗口行可能被吞、估算 3–7%/次）、面板重开时有约 0.5–1s 空白期、运行中 New Window 调用失败会静默 fallback 到 `open -na`（会拉起第二实例）、轮询无在途守卫。修复触及 `extension.js` 运行行为，属核心开发，按 dev-workflow 测试先行。**该仓库是本团队首个走 dev-workflow 的项目：目前无测试框架、无测试命令、无 CI（无 `.github/`）、main 无分支保护**——本任务一并把测试框架与测试命令建立起来（CI 与分支保护随后补齐；顺序必须是先 ci.yml 经 PR 进 main → 再开保护设 required，反序死锁）。
   **要做什么**：① 读 Issue #1（https://github.com/xhqing/ghostty-launcher/issues/1）正文与评论——评论里有 dev 侧给的接口提示：拟抽 `lib/ghostty.js`（纯逻辑：JXA 脚本生成 / 决策与重试 / `shellQuote`，外部依赖可注入）与 `media/panel.js`（webview 端脚本，纯函数段带 `module.exports` 守卫、node 可直接 require）；② 选测试框架（零依赖方案：Node 内置 `node:test`），在项目正式测试位置（`test/`）写测试、带 `# TEST_CASES_WRITE_OK` 标记写入；③ 自跑确认红（实现尚不存在）；④ 定下测试命令（`package.json` 的 `test` script）——测试命令配置属测试体系、由本侧定义，本地全量与 CI 都跑它；⑤ 按 dev-workflow `references/test-cases.md`「CI 集成」规范拟 `ci.yml`（触发器含 `pull_request`(main) + `push`(main)，执行内容覆盖全量测试 + 类型 / 语法检查）；⑥ 交付自检全过后报告应 `git add` 的路径与改动摘要（commit 由用户亲自执行，AI 不代行）。
