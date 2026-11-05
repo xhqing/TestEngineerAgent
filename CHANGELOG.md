@@ -10,6 +10,13 @@
 
 ## [未发布]
 
+### 新增（T28 出题：pi-harness Issue #49「扩展加载失败不应整机退出」的测试）
+
+- **为什么改**：pi 的扩展加载策略是「任一扩展解析失败就 `exit(1)`」，一个可选插件写坏会让整个 CLI 不可用（2026-11-04 实测一整天起不来）。Atlas 侧已开需求单 pi-harness #49，按 dev-workflow 需测试先行先出题，故在 `TODO.md` 记 T28，交 Hopper 在功能分支上写先红测试。
+- **改了什么**：`TODO.md` 橙色紧急度节新增 T28（背景 / 工作目录 `~/Developer/pi-harness-ext-load` 与分支 `fix/extension-load-fail-soft` / 四条可观察行为断言 / 自跑见红要求 / 不提交边界 / Issue #49 关联）。
+- **回归检查**：只增一条待办，无测试与实现变更；T25 / T24 / T1 / T5 等既有条目一字未动。
+- **进展**（2026-11-05 15:45，Hopper 出题完成）：新增 `packages/coding-agent/test/extension-load-failure.test.ts`（5 条黑盒用例：坏扩展退出码 0 + 健康扩展仍加载 / 坏扩展不连带兄弟失效 / `--strict-extensions` 恢复硬退出 / 严格模式不破坏健康运行 / 全健康无假警告），自跑 `4 failed | 1 passed`（红的是行为未实现的 (a)(d) 与尚不存在的 `--strict-extensions` 两条），全仓库 `tsgo --noEmit`、`check:ts-imports`、`biome` 均干净；测试文件以未提交状态留在 pi-harness worktree，按 dev-workflow 由 Atlas 与实现同一次提交。只改 `TODO.md` 的 T28 条目与本节。
+
 ### 变更（移除访问量徽章，配合停用集中式流量采集）
 
 - **为什么改**：用户 2026-11-04 决定停用 xhqing 仓库的集中式访问量采集，同时不再在各仓库 README 展示访问量徽章。徽章的数据源必须由采集任务每天刷新，采集停掉之后徽章会冻结在旧值，而徽章文案写的是「Visits/day (14d)」——数字不再更新却仍显示成实时数据，留着反而误导读者。
