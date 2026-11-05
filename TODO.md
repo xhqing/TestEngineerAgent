@@ -5,34 +5,6 @@
 
 ## 🟠 橙色紧急度
 
-- [ ] **T28** 为 pi-harness Issue #49 出测试（先红）：单个扩展加载失败不得让 `pi` 整体退出（记录：2026-11-05 15:35）
-  **背景**：pi 加载扩展时「任一扩展文件解析失败 → 打印 `Error: Failed to load extension …: ParserError: …` → `exit(1)`」，一个可选插件写坏就把整个 CLI 变成不可用（2026-11-04 实测：某个本地扩展里一个未转义的反引号让全机每个 `pi` 会话一整天起不来，只能人工修好）。用户定调根治：扩展加载失败降级为警告 + 跳过失败的扩展 + 保留 `-ne` 提示，并给 `--strict-extensions` 恢复旧的硬退出行为。需求端 Issue：https://github.com/xhqing/pi-harness/issues/49
-  **要做什么**（工作目录 `~/Developer/pi-harness-ext-load`，分支 `fix/extension-load-fail-soft`，已从最新 main 开出、`npm ci` 已装好；测试文件写入带 `# TEST_CASES_WRITE_OK`）：
-  ① 先读 Issue #49 正文（现象 / 代码位置 / 建议行为 / 验收标准）与 pi-harness `DEVELOPMENT.md` 的测试规范（`packages/coding-agent/test/suite/` 用 `test/suite/harness.ts` + faux provider；不起真实供应商请求）。
-  ② 在项目正式测试位置（`packages/coding-agent/test/`）写测试。**写入通道注意**：`test-cases-guard` 对 Write / Edit 工具写测试路径是无条件 deny（无标记通道），所以先把测试内容落到 `<worktree>/tmp/` 再 `cp` 过去，或直接用带 `# TEST_CASES_WRITE_OK` 标记的 bash heredoc 写入；跑测试命令不受限。造场景的办法可参考现存测试：`test/extensions-discovery.test.ts` 用 `fs.mkdtempSync` 建临时扩展目录 + `discoverAndLoadExtensions()`；若需要验证「CLI 是否退出」这一层，可参考 `test/package-command-paths.test.ts` / `test/session-id-readonly.test.ts` 里起子进程的写法（把 `PI_CODING_AGENT_DIR` 指到临时目录，用 faux provider / 不发真实请求的方式跑 `pi -p "…"`，断言子进程退出码与 stderr）。**以能真实验证行为为准，不要求照抄某一种造法**。
-  ③ 断言清单（全部是「可观察行为」，不要断言实现细节）：
-     (a) 扩展目录里同时放一个**语法错误**的扩展和一个正常扩展 → 进程**不退出**（退出码 0），正常扩展仍然生效（例如它注册的命令 / 工具可用），输出里点名那个坏文件（含 `Failed to load extension` 与文件路径）；
-     (b) 同一个场景加 `--strict-extensions` → 退出码 1，输出含 `Failed to load extension` 与 `pi -ne` 提示（恢复旧行为）；
-     (c) **防误报**：扩展全部正常时，不出现任何扩展加载相关的 warning / error；
-     (d) 至少一条用例覆盖「坏扩展不会连带其他扩展一起失效」（例如两个正常扩展 + 一个坏扩展，两个正常的都还在）。
-  ④ 自跑见红：当前 main 的实现是硬退出，所以 (a)(d) 必红、(b)(c) 应绿——给出实际命令 + 输出（红的用例名、绿的数量）。若 (b)(c) 也红，先判断是断言写错还是 Issue 与现状不符，不猜、写进报告。
-  ⑤ **不要提交**：不 `git add` / 不 `git commit` / 不 `git push`，改动以未提交的工作区改动形式留在 worktree，报告测试文件清单 + 测试命令 + 见红证据。
-  ⑥ **边界**：只写测试文件，不改 `packages/coding-agent/src/` 下任何实现（实现归 Atlas）；不放宽断言（把 `toBe(0)` 改 `not.toBe(1)`、删断言都算违规）；新测试要能进 CI 全量跑（`./test.sh` 口径）。
-  **进展**（2026-11-05 15:45）：①～④ 已完成，⑤⑥ 遵守——只新增一个测试文件、没动 `packages/coding-agent/src/` 一行实现、没 `git add` / `commit` / `push`。新文件 `packages/coding-agent/test/extension-load-failure.test.ts`（5 条用例）以未提交的工作区改动留在 worktree `~/Developer/pi-harness-ext-load`，等 Atlas 实现到位后同一次提交进 PR。
-  **造法**（全部黑盒观察，不断言实现细节）：起子进程跑 `pi`，`node --import src/experimental/source-resolver.ts src/cli.ts -p "say ok" --model <fixture>/<fixture-model>`，`PI_CODING_AGENT_DIR` 指临时 agent 目录；临时目录里写 `models.json` 注册一个 `openai-completions` 供应商、baseUrl 指向测试进程内的 `127.0.0.1` SSE 假服务（返回 `echo-ok`，`PI_OFFLINE=1`，不发任何真实供应商请求）；`agent/extensions/` 下放健康扩展（工厂执行时往 marker 文件追加自己的名字，作为「确实加载了」的可观察证据）与语法错误扩展（缺右花括号，与 #49 事故同类）。
-  **5 条用例**：(a) 坏 + 好 → 退出码 0、stdout 含 `echo-ok`、stderr 用正则 `Failed to load extension "[^"]*broken\.ts"` 点名坏文件、marker 恰为 `alpha`；(d) 两个好 + 一个坏 → 退出码 0、marker 同时含 `alpha` 与 `beta`（坏扩展没连带打掉兄弟）；(b) 坏 + `--strict-extensions` → 退出码 1、含 `Failed to load extension` / 坏文件路径 / `pi -ne`，且 stderr **不含** `Unknown option`；(b 补充) 全部健康 + `--strict-extensions` → 退出码 0、无 `Unknown option`、无 `Failed to load extension`（严格模式只在出错时变严，不破坏正常运行）；(c) 全健康 → 退出码 0、marker 两个都在、stderr 无任何 `Failed to load extension` 与 `Warning/Error: …extension`。
-  **自跑见红**：`cd packages/coding-agent && node ../../node_modules/vitest/dist/cli.js --run test/extension-load-failure.test.ts` → **Tests 4 failed | 1 passed (5)**、`Duration 5.01s`。红色 4 条具体是：
-  - ❌ (a) `skips a broken extension, keeps running, and still loads the healthy one` —— `expected 1 to be +0`（现在是硬退出，进程死在扩展加载阶段，stdout 空）
-  - ❌ (d) `does not take down other extensions when one is broken` —— `expected 1 to be +0`
-  - ❌ (b) `fails fast with --strict-extensions` —— `expected 'Error: Unknown option: --strict-ext…' not to contain 'Unknown option'`
-  - ❌ (b 补充) `runs normally with --strict-extensions when every extension loads` —— `expected 1 to be +0`（同一行 `Error: Unknown option: --strict-extensions`）
-  - ✅ (c) `reports nothing about extension loading when every extension loads` 绿（当前实现下健康扩展本来就不报警，符合预期）
-  **与 ④ 预期的偏差（如实说明，不是断言写错）**：④ 预计 (b)(c) 应绿，实测 (b) 两条都红。根因是 **`--strict-extensions` 目前根本不是已存在的选项**（`parseArgs` 里没有它，CLI 直接打 `Error: Unknown option: --strict-extensions`）：如果 (b) 只断言「退出码 1 + `Failed to load extension` + `pi -ne`」，今天会**假绿**——因为硬退出行为本身就在，这三条凑巧全满足，实现哪天漏加这个选项、甚至把严格模式做成默认，(b) 都发现不了。所以 (b) 必须带上「该选项被识别（stderr 不含 `Unknown option`）」这一条，「全部健康 + 严格模式 → 退出码 0」是配套的「严格模式不许成为默认」守卫。(c) 与预期一致。
-  **交付自检**：`node_modules/.bin/tsgo --noEmit`（全仓库类型检查）→ 无输出、退出码 **0**；`npm run check:ts-imports` → 退出码 **0**；`biome check --write packages/coding-agent/test/extension-load-failure.test.ts` → 无告警（1 file fixed 后原样通过）；连跑两次结果一致（4 failed | 1 passed），无抖动。
-  **环境备注**：worktree 里 `packages/ai/src/providers/data/`（39 个 JSON，被 .gitignore 忽略、不入库）原本不存在，子进程一启动就 `ERR_MODULE_NOT_FOUND .manifest.json`；已从 `~/Developer/pi-harness/packages/ai/src/providers/data` 复制过来（git 无感知，`git status` 仍只有新测试文件一行）。
-  **剩余**：Atlas 实现（`main.ts` 扩展加载错误降级为 warning + 跳过失败扩展 + 新增 `--strict-extensions`）→ 本地全量绿 → 提交（测试 + 实现同一次提交）→ PR（`fixes #49`）→ CI → 合并 → 发版 → 本条归档。
-  **关联**：Issue #49；worktree `~/Developer/pi-harness-ext-load` / 分支 `fix/extension-load-fail-soft`；上游同族历史 Issue #6222 / #9235 / #10342（全部自动关闭未修）；测试就位后 Atlas 实现 → 本地全量绿 → 提交 → PR（`fixes #49`）→ CI → 合并 → 发版。
-
 - [ ] **T25** 治本：把 pi-harness 的「长缓存保留」用例从硬编码模型名改成从模型目录动态派生（Issue #44，worktree `~/Developer/pi-harness-model-drift`，分支 `fix/model-catalog-drift-test`）（记录：2026-11-02 17:32）
   **背景**：`packages/ai` 的模型目录是**构建时**由 `npm run generate-models` 从供应商线上接口实时生成、**不入库**（`packages/ai/src/providers/data/` 在 .gitignore 里），所以上游一改模型名，测试里写死的 id 就失效、`tsgo --noEmit` 报 TS2551，而 `build-check-test` 是 main 的 required check，结果**任何 PR 都红、main 事实冻结**（今天 PR #41 就是被这条卡的；上一次同类问题见 #14，那次的修法是改模型名适配漂移，属治标）。用户定调：这次走根治，**不许再用「删掉那一行」的止血法**（我已在 Issue 里写明验收标准）。需求端 Issue：https://github.com/xhqing/pi-harness/issues/44
   **要做什么**（工作目录 `~/Developer/pi-harness-model-drift`，分支 `fix/model-catalog-drift-test`，已从最新 main 开出；测试文件写入带 `# TEST_CASES_WRITE_OK`）：
