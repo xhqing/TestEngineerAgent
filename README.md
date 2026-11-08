@@ -76,6 +76,6 @@ Boundary with Prometheus (CapabilityManagerAgent): test assets living in each pr
 
 ## License & Attribution
 
-Copyright (c) 2026 All Contributors. Licensed under the [MIT License](LICENSE.md).
+Copyright (c) 2026 xhqing <https://github.com/xhqing>. Licensed under the [MIT License](LICENSE.md).
 
 **Attribution:** If you derive from or redistribute this project, please retain the copyright notice and license file, and credit the source: [TestEngineerAgent](https://github.com/xhqing/TestEngineerAgent).
