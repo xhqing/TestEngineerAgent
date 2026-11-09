@@ -1,5 +1,10 @@
 # CHANGELOG
 
+### 变更（引用同步：Mark 项目更名为 quant-agent，2026-11-09）
+
+- **为什么改**：Mark 的 Agent 项目 2026-11-09 按新命名规定（agent 项目名一律 `<职责>-agent`、全小写）由 `QuantStrategistAgent` 更名为 `quant-agent`。README 的测试对象表里列着它，不同步就会指向旧名。
+- **改了什么**：`README.md` / `README_cn.md` 里 `QuantStrategistAgent` → `quant-agent`。
+
 本文件记录本项目（TestEngineerAgent / Hopper）每次文件增删改查的变更，写清「为什么改」和「改了什么」。版本号以项目根 `VERSION` 文件为唯一权威。
 
 ### 新增（CI 门禁：validate 检查 + main 分支 strict 保护）
