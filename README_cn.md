@@ -76,6 +76,6 @@ main 永远绿是设计出来的：main 只见「红绿闭环过」的完整状�
 
 ## 许可与署名
 
-版权所有 (c) 2026 xhqing <https://github.com/xhqing>，基于 [MIT License](LICENSE.md) 授权。
+版权所有 (c) 2026 xhqing and contributors，基于 [MIT License](LICENSE.md) 授权。
 
 **署名要求**：如你基于本项目衍生或再分发，请保留版权声明与许可文件，并注明来源：[TestEngineerAgent](https://github.com/xhqing/TestEngineerAgent)。
