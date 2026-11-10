@@ -64,7 +64,7 @@ Infrastructure squad (alongside Tinker, Prometheus, Anvil, Atlas, Ada, Alfred), 
 
 | Agent | Software projects |
 |---|---|
-| Atlas (FullStackEngineerAgent) | zcode-cli, zcode-vsce, XPilot |
+| Atlas (dev-agent) | zcode-cli, zcode-vsce, XPilot |
 | Anvil (BackendEngineerAgent) | CC-BRIDGE |
 | Alfred (DeviceStewardAgent) | ResourceMonitor |
 | Mark (quant-agent) | gridtrader |

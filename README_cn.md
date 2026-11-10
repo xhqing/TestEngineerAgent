@@ -64,7 +64,7 @@ main 永远绿是设计出来的：main 只见「红绿闭环过」的完整状�
 
 | Agent | 软件项目 |
 |---|---|
-| Atlas（FullStackEngineerAgent） | zcode-cli、zcode-vsce、XPilot |
+| Atlas（dev-agent） | zcode-cli、zcode-vsce、XPilot |
 | Anvil（BackendEngineerAgent） | CC-BRIDGE |
 | Alfred（DeviceStewardAgent） | ResourceMonitor |
 | Mark（quant-agent） | gridtrader |
