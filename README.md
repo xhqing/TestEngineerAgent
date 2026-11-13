@@ -12,6 +12,10 @@
 
 # TestEngineerAgent
 
+> **⚠️ Retired from the team on 2026-11-13; this project is no longer maintained.**
+>
+> The development workflow moved to "the leader writes the ticket, a worker implements it": dev-agent (Atlas) now writes the tests on a sub-project's feature branch before any implementation exists, and the worker treats them as read-only. That achieves the same separation between writing assertions and writing code without a dedicated testing agent. Test ownership has been handed over to **dev-agent (Atlas)**, and the strict discipline covers its sub-projects only. This repository is kept as an archive and will not be updated.
+
 > 🐞 **Hopper** — the software test engineer. Named after Grace Hopper, who found the first computer bug ever recorded (a moth in the Harvard Mark II, 1947) and popularized the word "debug". This agent hunts bugs for the whole team: it writes tests from GitHub Issues **before** development starts (red first, then green), and guards every project with a regression safety net.
 
 [简体中文](README_cn.md)

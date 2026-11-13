@@ -1,5 +1,11 @@
 # CHANGELOG
 
+### 变更（项目退役：2026-11-13 从团队除名）
+
+- **为什么改**：用户 2026-11-13 决定把 Hopper（TestEngineerAgent）从团队除名。开发工作流已变为「Leader 给 Worker 出题」——由 dev-agent（Atlas）在子项目 worktree 上、实现开工前先写出测试，Worker 全程只读不改，即可达成同样的测试开发分离效果，独立的测试 agent 不再必要；同时明确**只有 dev-agent 的子项目需要严格的测试开发分离范式与回归防护网**，其它 agent 的项目不涉及复杂软件开发，不需要这套范式。
+- **改了什么**：① `README.md` / `README_cn.md` 标题下加退役说明（双语同步，写明测试职责已并入 dev-agent、本仓库保留为存档）；② `AGENTS.md` 顶部加同样说明，原「你是谁 / 你的职责」等身份段落保留为退役前的历史记录；③ `TODO.md` 的十条活跃条目全量移入 `TODO-archive.md`（8 条经核实已完成、2 条转移至 dev-agent 的 `TODO.md`），清单清空；④ 删除 `cases/` 目录（仅剩 zcode-cli 两组未完成需求，而 zcode-cli 项目已于 2026-10-14 取消，需求不再做）。
+- **回归检查**：① 只改文档与归档，不涉及任何可执行内容；② 历史 CHANGELOG 条目一字未改；③ 版本号不动（纯文档类改动，不触发 bump / 发版）；④ 归档条目正文原样保留，未改写历史记录。
+
 ### 变更（引用同步：Mark 项目更名为 quant-agent，2026-11-09）
 
 - **为什么改**：Mark 的 Agent 项目 2026-11-09 按新命名规定（agent 项目名一律 `<职责>-agent`、全小写）由 `QuantStrategistAgent` 更名为 `quant-agent`。README 的测试对象表里列着它，不同步就会指向旧名。

@@ -12,6 +12,10 @@
 
 # TestEngineerAgent
 
+> **⚠️ 本项目已于 2026-11-13 从团队除名，不再维护。**
+>
+> 开发工作流已变为「Leader 给 Worker 出题」：由 dev-agent（Atlas）在子项目 worktree 上、实现开工前先写出测试，Worker 全程只读不改，就能达成同样的测试开发分离效果，独立的测试 agent 不再必要。测试定义权已并入 **dev-agent（Atlas）**，这套严格范式只覆盖它名下的子项目。本仓库保留为存档，不再更新。
+
 > 🐞 **Hopper** —— 软件测试工程师。名字取自 Grace Hopper：史上第一个计算机 bug（1947 年哈佛 Mark II 继电器里的那只蛾子）的发现者、「debug」一词的推广者。这个 agent 替全团队找 bug：开发开始**之前**基于 GitHub Issue 把测试写出来（先红后绿），并用回归防护网守住每个项目。
 
 [English](README.md)
